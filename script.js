@@ -325,7 +325,7 @@ async function connectFirebase() {
       setFirebaseStatus("게시판 연결됨", "connected");
       renderPosts();
     } catch (error) {
-      const message = ["auth/configuration-not-found", "auth/operation-not-allowed"].includes(error.code)
+      const message = ["auth/configuration-not-found", "auth/operation-not-allowed", "auth/admin-restricted-operation"].includes(error.code)
         ? "Firebase Console에서 익명 로그인을 활성화해 주세요."
         : "Firebase 로그인에 실패했습니다.";
       setFirebaseStatus(message, "local");
