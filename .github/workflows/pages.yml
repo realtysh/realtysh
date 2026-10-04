@@ -36,7 +36,7 @@ jobs:
           FIREBASE_MEASUREMENT_ID: ${{ vars.FIREBASE_MEASUREMENT_ID || secrets.FIREBASE_MEASUREMENT_ID }}
         run: |
           mkdir -p site
-          cp index.html styles.css script.js site/
+          cp index.html apartment.html styles.css apartment.css script.js apartment.js site/
           node <<'NODE'
           const fs = require('node:fs');
           const requiredKeys = [
@@ -60,10 +60,11 @@ jobs:
             config.measurementId = process.env.FIREBASE_MEASUREMENT_ID;
           }
           const output = missingKeys.length ? null : config;
-          const indexPath = 'site/index.html';
-          const html = fs.readFileSync(indexPath, 'utf8')
-            .replaceAll('__BUILD_ID__', process.env.GITHUB_SHA);
-          fs.writeFileSync(indexPath, html);
+          for (const pagePath of ['site/index.html', 'site/apartment.html']) {
+            const html = fs.readFileSync(pagePath, 'utf8')
+              .replaceAll('__BUILD_ID__', process.env.GITHUB_SHA);
+            fs.writeFileSync(pagePath, html);
+          }
           fs.writeFileSync('site/firebase-config.js', `window.REALTYSH_FIREBASE_CONFIG = ${JSON.stringify(output)};\n`);
           console.log(missingKeys.length
             ? `Firebase config incomplete; using local favorites. Missing: ${missingKeys.join(', ')}`
