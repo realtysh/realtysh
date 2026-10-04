@@ -60,6 +60,10 @@ jobs:
             config.measurementId = process.env.FIREBASE_MEASUREMENT_ID;
           }
           const output = missingKeys.length ? null : config;
+          const indexPath = 'site/index.html';
+          const html = fs.readFileSync(indexPath, 'utf8')
+            .replaceAll('__BUILD_ID__', process.env.GITHUB_SHA);
+          fs.writeFileSync(indexPath, html);
           fs.writeFileSync('site/firebase-config.js', `window.REALTYSH_FIREBASE_CONFIG = ${JSON.stringify(output)};\n`);
           console.log(missingKeys.length
             ? `Firebase config incomplete; using local favorites. Missing: ${missingKeys.join(', ')}`
