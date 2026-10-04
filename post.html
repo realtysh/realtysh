@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f7f8f4">
+    <meta name="description" content="RealtySH 매물 게시글 상세 정보입니다.">
+    <title>매물 게시글 | RealtySH</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css?v=__BUILD_ID__">
+    <link rel="stylesheet" href="posts.css?v=__BUILD_ID__">
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" defer></script>
+    <script src="firebase-config.js?v=__BUILD_ID__" defer></script>
+    <script src="post.js?v=__BUILD_ID__" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">본문으로 건너뛰기</a>
+    <header class="site-header">
+      <a class="wordmark" href="index.html" aria-label="RealtySH 홈"><span class="wordmark-icon" aria-hidden="true">R</span><span>realty<span class="wordmark-accent">sh</span></span></a>
+      <nav class="main-nav" aria-label="주요 메뉴"><a href="index.html#homes">게시글 목록</a><a href="index.html#approach">리얼티 소개</a><a href="index.html#contact">상담 문의</a></nav>
+    </header>
+    <main class="post-page" id="main">
+      <div class="post-page-shell">
+        <a class="post-back-link" href="index.html#homes">← 게시글 목록으로</a>
+        <p class="post-page-status" id="post-page-status" role="status" aria-live="polite">게시글을 불러오는 중입니다.</p>
+        <article class="post-detail" id="post-detail" hidden>
+          <div class="post-detail-heading">
+            <div class="detail-tags" id="post-detail-tags"></div>
+            <h1 id="post-detail-title"></h1>
+            <p class="post-detail-location" id="post-detail-location"></p>
+            <div class="post-owner-actions" id="post-owner-actions" hidden>
+              <a class="post-edit-link" id="post-edit-link" href="index.html">수정</a>
+              <button class="post-delete-button" id="post-delete-button" type="button">삭제</button>
+            </div>
+          </div>
+          <img class="post-detail-image" id="post-detail-image" alt="">
+          <div class="post-detail-grid">
+            <section class="post-description">
+              <p class="eyebrow">PROPERTY STORY</p>
+              <h2>공간 소개</h2>
+              <p id="post-detail-description"></p>
+            </section>
+            <aside class="post-facts">
+              <p class="eyebrow">PROPERTY OVERVIEW</p>
+              <p class="post-detail-price" id="post-detail-price"></p>
+              <dl id="post-detail-facts"></dl>
+              <a class="post-inquiry-link" href="index.html#contact">문의하기 <span aria-hidden="true">↗</span></a>
+            </aside>
+          </div>
+        </article>
+      </div>
+    </main>
+    <footer class="site-footer">
+      <a class="wordmark footer-wordmark" href="index.html"><span class="wordmark-icon" aria-hidden="true">R</span><span>realty<span class="wordmark-accent">sh</span></span></a>
+      <p>게시글 정보는 작성자가 등록한 내용입니다.</p>
+      <span class="copyright">© 2026 RealtySH</span>
+    </footer>
+  </body>
+</html>

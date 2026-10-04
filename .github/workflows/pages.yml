@@ -36,7 +36,7 @@ jobs:
           FIREBASE_MEASUREMENT_ID: ${{ vars.FIREBASE_MEASUREMENT_ID || secrets.FIREBASE_MEASUREMENT_ID }}
         run: |
           mkdir -p site
-          cp index.html apartment.html styles.css apartment.css script.js apartment.js site/
+          cp index.html post.html styles.css posts.css post.js script.js site/
           node <<'NODE'
           const fs = require('node:fs');
           const requiredKeys = [
@@ -60,7 +60,7 @@ jobs:
             config.measurementId = process.env.FIREBASE_MEASUREMENT_ID;
           }
           const output = missingKeys.length ? null : config;
-          for (const pagePath of ['site/index.html', 'site/apartment.html']) {
+          for (const pagePath of ['site/index.html', 'site/post.html']) {
             const html = fs.readFileSync(pagePath, 'utf8')
               .replaceAll('__BUILD_ID__', process.env.GITHUB_SHA);
             fs.writeFileSync(pagePath, html);

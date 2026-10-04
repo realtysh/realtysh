@@ -95,6 +95,9 @@ button { color: inherit; }
   gap: 18px;
   padding: 0 17px;
   border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
 }
 
 .nav-contact span { color: var(--green); font-size: 17px; }
@@ -331,27 +334,6 @@ button { color: inherit; }
   font-weight: 700;
 }
 
-.favorite-button {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  display: grid;
-  width: 38px;
-  aspect-ratio: 1;
-  place-items: center;
-  border: 0;
-  border-radius: 50%;
-  background: var(--white);
-  color: var(--ink);
-  cursor: pointer;
-  font-size: 22px;
-  line-height: 1;
-  transition: color 180ms ease, transform 180ms ease;
-}
-
-.favorite-button:hover { transform: scale(1.07); }
-.favorite-button[aria-pressed="true"] { color: var(--coral); }
-
 .property-details { padding: 17px 0 0; }
 
 .property-meta, .property-specs {
@@ -373,8 +355,40 @@ button { color: inherit; }
 }
 
 .property-price { margin: 0 0 13px; font-size: 17px; font-weight: 700; }
-.property-price span { color: var(--muted); font-size: 11px; font-weight: 400; }
 .property-specs { justify-content: flex-start; gap: 14px; padding-top: 11px; border-top: 1px solid var(--line); }
+
+.post-card-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; }
+.post-edit-button, .post-delete-button { min-height: 32px; padding: 0 12px; border: 1px solid var(--line); background: transparent; cursor: pointer; font-size: 10px; }
+.post-edit-button:hover { border-color: var(--green); color: var(--green); }
+.post-delete-button:hover { border-color: var(--coral); color: #a93f2d; }
+
+.post-dialog {
+  width: min(92vw, 700px);
+  max-width: 700px;
+  max-height: min(90vh, 900px);
+  padding: 0;
+  border: 0;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.post-dialog::backdrop { background: rgb(14 29 22 / 58%); backdrop-filter: blur(3px); }
+.post-dialog-head { display: flex; align-items: flex-start; justify-content: space-between; padding: 26px 30px 19px; border-bottom: 1px solid var(--line); }
+.post-dialog-head h2 { margin: 9px 0 0; font-family: var(--serif); font-size: 25px; font-weight: 400; }
+.dialog-close { width: 38px; height: 38px; border: 1px solid var(--line); background: transparent; cursor: pointer; font-size: 24px; line-height: 1; }
+#post-form { padding: 22px 30px 27px; }
+.post-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.post-field { display: grid; gap: 7px; min-width: 0; }
+.post-field-wide { grid-column: 1 / -1; }
+.post-field > span { color: var(--muted); font-size: 10px; }
+.post-field input, .post-field select, .post-field textarea { width: 100%; min-height: 43px; padding: 10px 11px; border: 1px solid var(--line); border-radius: 0; outline-color: var(--green); background: var(--white); color: var(--ink); font-size: 12px; }
+.post-field textarea { resize: vertical; line-height: 1.7; }
+.post-form-status { min-height: 18px; margin: 14px 0 0; color: #a93f2d; font-size: 11px; }
+.post-form-actions { display: flex; justify-content: flex-end; gap: 9px; }
+.form-cancel, .form-submit { min-height: 42px; padding: 0 18px; border: 1px solid var(--green); cursor: pointer; font-size: 11px; font-weight: 600; }
+.form-cancel { background: transparent; color: var(--green); }
+.form-submit { background: var(--green); color: var(--white); }
+.form-submit:disabled { cursor: wait; opacity: 0.65; }
 
 .empty-state {
   margin: 0;
@@ -558,6 +572,12 @@ button { color: inherit; }
   .contact-link { width: 100%; }
   .contact-aside { grid-column: 1; text-align: left; }
   .site-footer { align-items: flex-start; flex-direction: column; gap: 13px; padding: 25px 5.5%; }
+  .post-dialog { width: 100%; max-width: none; max-height: 92vh; margin: auto 0 0; }
+  .post-dialog-head { padding: 22px 20px 16px; }
+  #post-form { padding: 18px 20px 23px; }
+  .post-form-grid { grid-template-columns: 1fr; gap: 13px; }
+  .post-field-wide { grid-column: auto; }
+  .post-form-actions > button { flex: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

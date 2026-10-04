@@ -29,7 +29,8 @@
       <nav class="main-nav" id="main-nav" aria-label="주요 메뉴">
         <a href="#homes">매물 찾기</a>
         <a href="#approach">리얼티 소개</a>
-        <a class="nav-contact" href="#contact">상담 문의 <span aria-hidden="true">↗</span></a>
+        <a href="#contact">상담 문의</a>
+        <button class="nav-contact post-create-trigger" type="button">게시글 등록 <span aria-hidden="true">+</span></button>
       </nav>
     </header>
 
@@ -60,8 +61,9 @@
             <span>거래 유형</span>
             <select id="search-deal">
               <option value="all">전체 거래</option>
-              <option value="매매">매매</option>
-              <option value="전세">전세</option>
+              <option value="sale">매매</option>
+              <option value="lease">전세</option>
+              <option value="monthly">월세</option>
             </select>
           </label>
           <button class="search-submit" type="submit"><span aria-hidden="true">⌕</span> 매물 검색</button>
@@ -74,7 +76,7 @@
             <p class="eyebrow">CURATED SPACES <span class="heading-number">01</span></p>
             <h2 id="homes-title">지금 눈여겨볼 공간</h2>
           </div>
-          <span class="sample-note">예시 매물</span>
+          <span class="sample-note">등록된 게시글</span>
         </div>
         <div class="listing-toolbar">
           <div class="filter-tabs" role="group" aria-label="매물 종류 필터">
@@ -85,54 +87,12 @@
           </div>
           <div class="listing-status">
             <p class="firebase-status" id="firebase-status" data-state="loading" role="status" aria-live="polite">저장소 확인 중</p>
-            <p class="result-count" aria-live="polite"><span id="result-count">3</span>개의 공간</p>
+            <p class="result-count" aria-live="polite"><span id="result-count">0</span>개의 공간</p>
           </div>
         </div>
 
-        <div class="property-grid" id="property-grid">
-          <article class="property-card" data-id="seongsu-loft" data-kind="apartment" data-deal="매매" data-search="서울 성수동 서울숲 아파트 복층 테라스">
-            <a class="property-image-link" href="apartment.html" aria-label="서울 성수동 복층 아파트 상세 페이지">
-              <img src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=900&q=82" alt="따뜻한 우드 톤의 넓은 거실" loading="lazy">
-              <span class="property-tag">예시 매물</span>
-            </a>
-            <button class="favorite-button" type="button" aria-label="관심 매물에 추가" aria-pressed="false">♡</button>
-            <div class="property-details">
-              <div class="property-meta"><span>서울 성수동</span><span>아파트 · 매매</span></div>
-              <h3>서울숲이 가까운 복층 하우스</h3>
-              <p class="property-price">12억 8,000 <span>만원</span></p>
-              <div class="property-specs"><span>전용 84㎡</span><span>방 3 · 욕실 2</span></div>
-            </div>
-          </article>
-
-          <article class="property-card" data-id="yeonhui-yard" data-kind="house" data-deal="전세" data-search="서울 연희동 마당 단독주택 조용한 주택">
-            <a class="property-image-link" href="#contact" aria-label="서울 연희동 마당 있는 단독주택 문의">
-              <img src="https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=82" alt="마당과 연결된 아늑한 주택 거실" loading="lazy">
-              <span class="property-tag">예시 매물</span>
-            </a>
-            <button class="favorite-button" type="button" aria-label="관심 매물에 추가" aria-pressed="false">♡</button>
-            <div class="property-details">
-              <div class="property-meta"><span>서울 연희동</span><span>단독주택 · 전세</span></div>
-              <h3>작은 마당이 있는 조용한 집</h3>
-              <p class="property-price">6억 2,000 <span>만원</span></p>
-              <div class="property-specs"><span>전용 112㎡</span><span>방 3 · 욕실 2</span></div>
-            </div>
-          </article>
-
-          <article class="property-card" data-id="haeundae-corner" data-kind="commercial" data-deal="매매" data-search="부산 해운대 상가 오션뷰 통창 라운지">
-            <a class="property-image-link" href="#contact" aria-label="부산 해운대 오션뷰 상가 문의">
-              <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=82" alt="큰 창으로 빛이 들어오는 현대적인 공간" loading="lazy">
-              <span class="property-tag">예시 매물</span>
-            </a>
-            <button class="favorite-button" type="button" aria-label="관심 매물에 추가" aria-pressed="false">♡</button>
-            <div class="property-details">
-              <div class="property-meta"><span>부산 해운대</span><span>상가 · 매매</span></div>
-              <h3>오션뷰가 펼쳐지는 코너 공간</h3>
-              <p class="property-price">8억 4,000 <span>만원</span></p>
-              <div class="property-specs"><span>전용 76㎡</span><span>1층 · 통창</span></div>
-            </div>
-          </article>
-        </div>
-        <p class="empty-state" id="empty-state" hidden>조건에 맞는 공간이 없습니다. 검색어나 필터를 바꿔보세요.</p>
+        <div class="property-grid" id="property-grid" aria-live="polite"></div>
+        <p class="empty-state" id="empty-state" role="status">게시글을 불러오는 중입니다.</p>
       </section>
 
       <section class="approach-section" id="approach" aria-labelledby="approach-title">
@@ -159,8 +119,37 @@
 
     <footer class="site-footer">
       <a class="wordmark footer-wordmark" href="#top"><span class="wordmark-icon" aria-hidden="true">R</span><span>realty<span class="wordmark-accent">sh</span></span></a>
-      <p>표시된 매물과 가격은 웹사이트 구성을 위한 예시입니다.</p>
+      <p>게시글의 정보와 이미지는 작성자가 등록한 내용입니다.</p>
       <span class="copyright">© 2026 RealtySH</span>
     </footer>
+
+    <dialog class="post-dialog" id="post-dialog" aria-labelledby="post-form-title">
+      <div class="post-dialog-head">
+        <div>
+          <p class="eyebrow">REALTYSH LISTING</p>
+          <h2 id="post-form-title">매물 게시글 등록</h2>
+        </div>
+        <button class="dialog-close" id="close-post-form" type="button" aria-label="닫기">×</button>
+      </div>
+      <form id="post-form">
+        <div class="post-form-grid">
+          <label class="post-field post-field-wide"><span>게시글 제목</span><input name="title" required maxlength="80" placeholder="예: 햇살이 잘 드는 성수동 아파트"></label>
+          <label class="post-field"><span>지역</span><input name="location" required maxlength="80" placeholder="예: 서울 성동구 성수동"></label>
+          <label class="post-field"><span>매물 종류</span><select name="propertyType" required><option value="apartment">아파트</option><option value="house">단독주택</option><option value="commercial">상가</option></select></label>
+          <label class="post-field"><span>거래 유형</span><select name="dealType" required><option value="sale">매매</option><option value="lease">전세</option><option value="monthly">월세</option></select></label>
+          <label class="post-field"><span>가격</span><input name="price" required maxlength="40" placeholder="예: 8억 5,000만원"></label>
+          <label class="post-field"><span>전용 면적</span><input name="area" required maxlength="20" placeholder="예: 84㎡"></label>
+          <label class="post-field"><span>방 개수</span><input name="rooms" required maxlength="12" placeholder="예: 3개"></label>
+          <label class="post-field"><span>욕실 개수</span><input name="bathrooms" required maxlength="12" placeholder="예: 2개"></label>
+          <label class="post-field post-field-wide"><span>대표 사진 URL</span><input name="imageUrl" type="url" required maxlength="1000" placeholder="https://..."></label>
+          <label class="post-field post-field-wide"><span>상세 설명</span><textarea name="description" required maxlength="3000" rows="5" placeholder="매물의 특징과 주변 환경을 소개해 주세요."></textarea></label>
+        </div>
+        <p class="post-form-status" id="post-form-status" role="status" aria-live="polite"></p>
+        <div class="post-form-actions">
+          <button class="form-cancel" id="cancel-post-form" type="button">취소</button>
+          <button class="form-submit" id="save-post" type="submit">게시글 등록</button>
+        </div>
+      </form>
+    </dialog>
   </body>
 </html>
