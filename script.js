@@ -152,7 +152,7 @@ function setConnectionError(error) {
 
 function openPostForm(post = null) {
   if (!database || !currentUser) {
-    postFormStatus.textContent = "Firebase 익명 로그인을 활성화해야 게시글을 등록할 수 있습니다.";
+    postFormStatus.textContent = "관리자 설정이 완료되면 별도 로그인 없이 게시글을 등록할 수 있습니다.";
     postDialog.showModal();
     return;
   }
@@ -228,7 +228,7 @@ document.querySelector("#cancel-post-form").addEventListener("click", () => post
 postForm.addEventListener("submit", async (event) => {
   event.preventDefault();
   if (!database || !currentUser) {
-    postFormStatus.textContent = "Firebase 익명 로그인을 활성화해야 게시글을 등록할 수 있습니다.";
+    postFormStatus.textContent = "관리자 설정이 완료되면 별도 로그인 없이 게시글을 등록할 수 있습니다.";
     return;
   }
 
@@ -326,7 +326,7 @@ async function connectFirebase() {
       renderPosts();
     } catch (error) {
       const message = ["auth/configuration-not-found", "auth/operation-not-allowed", "auth/admin-restricted-operation"].includes(error.code)
-        ? "Firebase Console에서 익명 로그인을 활성화해 주세요."
+        ? "Firebase Console에서 익명 사용자 인증을 허용해 주세요."
         : "Firebase 로그인에 실패했습니다.";
       setFirebaseStatus(message, "local");
     }
