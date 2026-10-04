@@ -10,6 +10,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js" defer></script>
+    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" defer></script>
+    <script src="firebase-config.js" defer></script>
     <script src="script.js" defer></script>
   </head>
   <body>
@@ -79,11 +83,14 @@
             <button class="filter-tab" type="button" data-filter="house" aria-pressed="false">단독주택</button>
             <button class="filter-tab" type="button" data-filter="commercial" aria-pressed="false">상가</button>
           </div>
-          <p class="result-count" aria-live="polite"><span id="result-count">3</span>개의 공간</p>
+          <div class="listing-status">
+            <p class="firebase-status" id="firebase-status" data-state="loading" role="status" aria-live="polite">저장소 확인 중</p>
+            <p class="result-count" aria-live="polite"><span id="result-count">3</span>개의 공간</p>
+          </div>
         </div>
 
         <div class="property-grid" id="property-grid">
-          <article class="property-card" data-kind="apartment" data-deal="매매" data-search="서울 성수동 서울숲 아파트 복층 테라스">
+          <article class="property-card" data-id="seongsu-loft" data-kind="apartment" data-deal="매매" data-search="서울 성수동 서울숲 아파트 복층 테라스">
             <a class="property-image-link" href="#contact" aria-label="서울 성수동 복층 아파트 문의">
               <img src="https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=900&q=82" alt="따뜻한 우드 톤의 넓은 거실" loading="lazy">
               <span class="property-tag">예시 매물</span>
@@ -97,7 +104,7 @@
             </div>
           </article>
 
-          <article class="property-card" data-kind="house" data-deal="전세" data-search="서울 연희동 마당 단독주택 조용한 주택">
+          <article class="property-card" data-id="yeonhui-yard" data-kind="house" data-deal="전세" data-search="서울 연희동 마당 단독주택 조용한 주택">
             <a class="property-image-link" href="#contact" aria-label="서울 연희동 마당 있는 단독주택 문의">
               <img src="https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?auto=format&fit=crop&w=900&q=82" alt="마당과 연결된 아늑한 주택 거실" loading="lazy">
               <span class="property-tag">예시 매물</span>
@@ -111,7 +118,7 @@
             </div>
           </article>
 
-          <article class="property-card" data-kind="commercial" data-deal="매매" data-search="부산 해운대 상가 오션뷰 통창 라운지">
+          <article class="property-card" data-id="haeundae-corner" data-kind="commercial" data-deal="매매" data-search="부산 해운대 상가 오션뷰 통창 라운지">
             <a class="property-image-link" href="#contact" aria-label="부산 해운대 오션뷰 상가 문의">
               <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=82" alt="큰 창으로 빛이 들어오는 현대적인 공간" loading="lazy">
               <span class="property-tag">예시 매물</span>

@@ -1,0 +1,1 @@
+window.REALTYSH_FIREBASE_CONFIG = null;

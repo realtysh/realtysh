@@ -7,7 +7,94 @@ const resultCount = document.querySelector("#result-count");
 const emptyState = document.querySelector("#empty-state");
 const menuToggle = document.querySelector(".menu-toggle");
 const mainNav = document.querySelector("#main-nav");
+const firebaseStatus = document.querySelector("#firebase-status");
+const favoriteButtons = [...document.querySelectorAll(".favorite-button")];
+const favoritePropertyIds = new Set(propertyCards.map((card) => card.dataset.id));
+const favoritesStorageKey = "realtysh-favorites";
 let selectedKind = "all";
+let savedFavorites = readSavedFavorites();
+let favoritesDocument = null;
+let cloudWriteQueue = Promise.resolve();
+
+function readSavedFavorites() {
+  try {
+    const storedFavorites = JSON.parse(localStorage.getItem(favoritesStorageKey) || "[]");
+    return new Set(storedFavorites.filter((id) => favoritePropertyIds.has(id)));
+  } catch {
+    return new Set();
+  }
+}
+
+function setFirebaseStatus(message, state) {
+  firebaseStatus.textContent = message;
+  firebaseStatus.dataset.state = state;
+}
+
+function renderFavoriteButtons() {
+  favoriteButtons.forEach((button) => {
+    const isSaved = savedFavorites.has(button.closest(".property-card").dataset.id);
+    button.setAttribute("aria-pressed", String(isSaved));
+    button.setAttribute("aria-label", isSaved ? "관심 매물에서 삭제" : "관심 매물에 추가");
+    button.textContent = isSaved ? "♥" : "♡";
+  });
+}
+
+function persistLocalFavorites() {
+  try {
+    localStorage.setItem(favoritesStorageKey, JSON.stringify([...savedFavorites]));
+  } catch {
+    setFirebaseStatus("브라우저 저장을 사용할 수 없음", "local");
+  }
+}
+
+function persistCloudFavorites() {
+  if (!favoritesDocument) return;
+
+  setFirebaseStatus("Firebase 저장 중", "loading");
+  cloudWriteQueue = cloudWriteQueue
+    .catch(() => {})
+    .then(() => favoritesDocument.set({
+      favorites: [...savedFavorites],
+      updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true }))
+    .then(() => setFirebaseStatus("Firebase 동기화됨", "connected"))
+    .catch((error) => {
+      console.warn("Firebase favorites could not be saved.", error);
+      setFirebaseStatus("클라우드 저장 실패 · 기기에 보관", "local");
+    });
+}
+
+async function connectFirebase() {
+  const config = window.REALTYSH_FIREBASE_CONFIG;
+  if (!config || typeof firebase === "undefined") {
+    setFirebaseStatus("이 기기에 저장", "local");
+    return;
+  }
+
+  setFirebaseStatus("Firebase 연결 중", "loading");
+
+  try {
+    if (firebase.apps.length === 0) firebase.initializeApp(config);
+    const credential = await firebase.auth().signInAnonymously();
+    const userFavoritesDocument = firebase.firestore()
+      .collection("users")
+      .doc(credential.user.uid);
+    const snapshot = await userFavoritesDocument.get();
+    const cloudFavorites = snapshot.exists && Array.isArray(snapshot.data().favorites)
+      ? snapshot.data().favorites.filter((id) => favoritePropertyIds.has(id))
+      : [];
+
+    savedFavorites = new Set([...savedFavorites, ...cloudFavorites]);
+    favoritesDocument = userFavoritesDocument;
+    persistLocalFavorites();
+    renderFavoriteButtons();
+    persistCloudFavorites();
+  } catch (error) {
+    console.warn("Firebase favorites are unavailable; using this device instead.", error);
+    favoritesDocument = null;
+    setFirebaseStatus("Firebase 연결 실패 · 기기에 저장", "local");
+  }
+}
 
 function updateListings() {
   const query = searchQuery.value.trim().toLocaleLowerCase("ko");
@@ -46,14 +133,22 @@ filterButtons.forEach((button) => {
   });
 });
 
-document.querySelectorAll(".favorite-button").forEach((button) => {
+favoriteButtons.forEach((button) => {
   button.addEventListener("click", () => {
-    const isSaved = button.getAttribute("aria-pressed") === "true";
-    button.setAttribute("aria-pressed", String(!isSaved));
-    button.setAttribute("aria-label", isSaved ? "관심 매물에 추가" : "관심 매물에서 삭제");
-    button.textContent = isSaved ? "♡" : "♥";
+    const propertyId = button.closest(".property-card").dataset.id;
+    if (savedFavorites.has(propertyId)) {
+      savedFavorites.delete(propertyId);
+    } else {
+      savedFavorites.add(propertyId);
+    }
+    persistLocalFavorites();
+    renderFavoriteButtons();
+    persistCloudFavorites();
   });
 });
+
+renderFavoriteButtons();
+connectFirebase();
 
 menuToggle.addEventListener("click", () => {
   const isOpen = menuToggle.getAttribute("aria-expanded") === "true";
