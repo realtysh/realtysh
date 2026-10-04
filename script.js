@@ -93,7 +93,12 @@ async function connectFirebase() {
   } catch (error) {
     console.warn("Firebase favorites are unavailable; using this device instead.", error);
     favoritesDocument = null;
-    setFirebaseStatus("Firebase 연결 실패 · 기기에 저장", "local");
+    const statusMessage = ["auth/configuration-not-found", "auth/operation-not-allowed"].includes(error.code)
+      ? "Firebase 익명 로그인 설정 필요 · 기기에 저장"
+      : error.code === "permission-denied"
+        ? "Firestore 규칙 확인 · 기기에 저장"
+        : "Firebase 연결 실패 · 기기에 저장";
+    setFirebaseStatus(statusMessage, "local");
   }
 }
 
