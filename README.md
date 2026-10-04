@@ -8,7 +8,7 @@
 
 ## Firebase 관심 매물
 
-GitHub Actions Variables에 `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID`, `FIREBASE_STORAGE_BUCKET`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_APP_ID`를 설정하면 배포 시 Firebase 설정 파일을 생성합니다. `FIREBASE_MEASUREMENT_ID`는 선택 사항입니다. 이 웹 설정은 브라우저에 전달되므로 서비스 계정 키는 사용하지 않습니다.
+GitHub Actions Variables에 `FIREBASE_API_KEY`, `FIREBASE_AUTH_DOMAIN`, `FIREBASE_PROJECT_ID`, `FIREBASE_STORAGE_BUCKET`, `FIREBASE_MESSAGING_SENDER_ID`, `FIREBASE_APP_ID`를 설정하면 배포 시 Firebase 설정 파일을 생성합니다. 기존 설정을 지원하기 위해 같은 이름의 Actions Secrets도 읽습니다. `FIREBASE_MEASUREMENT_ID`는 선택 사항입니다. Firebase 웹 설정은 배포된 브라우저에 공개되므로 Variables 사용을 권장하고 서비스 계정 키나 기타 비밀값은 넣지 마세요.
 
 Firebase Console에서 **Authentication > Sign-in method > Anonymous**를 활성화하고 Firestore 데이터베이스를 생성하세요. [firestore.rules](firestore.rules)의 규칙을 Firestore Rules에 게시해야 사용자별 관심 매물 저장이 허용됩니다. 익명 사용자의 관심 목록은 해당 브라우저에 유지됩니다. Firebase 설정이 없거나 연결되지 않으면 기기의 브라우저 저장소를 사용합니다.
 

@@ -67,7 +67,8 @@ function persistCloudFavorites() {
 async function connectFirebase() {
   const config = window.REALTYSH_FIREBASE_CONFIG;
   if (!config || typeof firebase === "undefined") {
-    setFirebaseStatus("이 기기에 저장", "local");
+    const reason = config ? "Firebase SDK를 불러오지 못함" : "Firebase 설정 없음";
+    setFirebaseStatus(`${reason} · 기기에 저장`, "local");
     return;
   }
 
