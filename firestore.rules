@@ -2,33 +2,20 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-
     match /posts/{postId} {
       allow read: if true;
-      allow create: if request.auth != null
-        && validPost(request.resource.data)
-        && request.resource.data.authorId == request.auth.uid;
-      allow update: if request.auth != null
-        && resource.data.authorId == request.auth.uid
-        && validPost(request.resource.data)
-        && request.resource.data.authorId == resource.data.authorId;
-      allow delete: if request.auth != null
-        && resource.data.authorId == request.auth.uid;
+      allow create, update: if validPost(request.resource.data);
+      allow delete: if true;
     }
 
     function validPost(data) {
       return data.keys().hasOnly([
           'title', 'location', 'propertyType', 'dealType', 'price', 'area',
-          'rooms', 'bathrooms', 'imageUrl', 'description', 'authorId',
-          'createdAt', 'updatedAt'
+          'rooms', 'bathrooms', 'imageUrl', 'description', 'createdAt', 'updatedAt'
         ])
         && data.keys().hasAll([
           'title', 'location', 'propertyType', 'dealType', 'price', 'area',
-          'rooms', 'bathrooms', 'imageUrl', 'description', 'authorId',
-          'createdAt', 'updatedAt'
+          'rooms', 'bathrooms', 'imageUrl', 'description', 'createdAt', 'updatedAt'
         ])
         && data.title is string && data.title.size() > 0 && data.title.size() <= 80
         && data.location is string && data.location.size() > 0 && data.location.size() <= 80
@@ -39,8 +26,7 @@ service cloud.firestore {
         && data.rooms is string && data.rooms.size() > 0 && data.rooms.size() <= 12
         && data.bathrooms is string && data.bathrooms.size() > 0 && data.bathrooms.size() <= 12
         && data.imageUrl is string && data.imageUrl.size() > 0 && data.imageUrl.size() <= 1000
-        && data.description is string && data.description.size() > 0 && data.description.size() <= 3000
-        && data.authorId is string;
+        && data.description is string && data.description.size() > 0 && data.description.size() <= 3000;
     }
   }
 }

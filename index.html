@@ -11,7 +11,6 @@
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css?v=__BUILD_ID__">
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js" defer></script>
-    <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" defer></script>
     <script src="firebase-config.js?v=__BUILD_ID__" defer></script>
     <script src="script.js?v=__BUILD_ID__" defer></script>
@@ -75,6 +74,7 @@
           <div>
             <p class="eyebrow">CURATED SPACES <span class="heading-number">01</span></p>
             <h2 id="homes-title">지금 눈여겨볼 공간</h2>
+            <p class="public-board-note">공개 게시판 · 누구나 게시글을 수정·삭제할 수 있습니다.</p>
           </div>
           <button class="post-create-inline post-create-trigger" type="button"><span aria-hidden="true">+</span> 게시글 작성</button>
         </div>
@@ -132,6 +132,7 @@
         <button class="dialog-close" id="close-post-form" type="button" aria-label="닫기">×</button>
       </div>
       <form id="post-form">
+        <p class="public-write-warning">로그인 없이 등록할 수 있습니다. 공개 게시판이므로 누구나 게시글을 수정하거나 삭제할 수 있습니다.</p>
         <div class="post-form-grid">
           <label class="post-field post-field-wide"><span>게시글 제목</span><input name="title" required maxlength="80" placeholder="예: 햇살이 잘 드는 성수동 아파트"></label>
           <label class="post-field"><span>지역</span><input name="location" required maxlength="80" placeholder="예: 서울 성동구 성수동"></label>

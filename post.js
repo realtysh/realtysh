@@ -4,7 +4,6 @@ const ownerActions = document.querySelector("#post-owner-actions");
 const deleteButton = document.querySelector("#post-delete-button");
 const postId = new URLSearchParams(window.location.search).get("id");
 let database = null;
-let currentUser = null;
 let unsubscribePost = null;
 
 const propertyTypes = {
@@ -68,22 +67,18 @@ function renderPost(post) {
   appendFact(facts, "방 개수", post.rooms);
   appendFact(facts, "욕실 개수", post.bathrooms);
 
-  if (currentUser && currentUser.uid === post.authorId) {
-    ownerActions.hidden = false;
-    document.querySelector("#post-edit-link").href = `index.html?edit=${encodeURIComponent(postId)}`;
-    deleteButton.onclick = async () => {
-      if (!window.confirm("이 게시글을 삭제할까요? 삭제한 게시글은 복구할 수 없습니다.")) return;
-      try {
-        await database.collection("posts").doc(postId).delete();
-        window.location.href = "index.html#homes";
-      } catch (error) {
-        console.error("게시글 삭제에 실패했습니다.", error);
-        window.alert("게시글을 삭제하지 못했습니다. Firestore 규칙을 확인해 주세요.");
-      }
-    };
-  } else {
-    ownerActions.hidden = true;
-  }
+  ownerActions.hidden = false;
+  document.querySelector("#post-edit-link").href = `index.html?edit=${encodeURIComponent(postId)}`;
+  deleteButton.onclick = async () => {
+    if (!window.confirm("공개 게시판입니다. 이 게시글을 삭제할까요? 삭제한 게시글은 복구할 수 없습니다.")) return;
+    try {
+      await database.collection("posts").doc(postId).delete();
+      window.location.href = "index.html#homes";
+    } catch (error) {
+      console.error("게시글 삭제에 실패했습니다.", error);
+      window.alert("게시글을 삭제하지 못했습니다. Firestore 규칙을 확인해 주세요.");
+    }
+  };
 
   document.title = `${post.title || "매물 게시글"} | RealtySH`;
   postStatus.hidden = true;
@@ -114,14 +109,6 @@ function connectPostPage() {
         : "게시글을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.");
     });
 
-    firebase.auth().signInAnonymously().then((credential) => {
-      currentUser = credential.user;
-      database.collection("posts").doc(postId).get().then((snapshot) => {
-        renderPost(snapshot.exists ? snapshot.data() : null);
-      }).catch((error) => console.error("게시글 작성자 확인에 실패했습니다.", error));
-    }).catch((error) => {
-      console.warn("익명 인증을 사용할 수 없습니다.", error);
-    });
   } catch (error) {
     console.error("Firebase 초기화에 실패했습니다.", error);
     setPostStatus("Firebase 연결을 확인해 주세요.");

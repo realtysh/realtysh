@@ -24,7 +24,6 @@ const dealTypes = {
   monthly: "월세"
 };
 let database = null;
-let currentUser = null;
 let posts = [];
 let selectedKind = "all";
 let editingPostId = null;
@@ -99,18 +98,16 @@ function createPostCard(post) {
   details.append(meta, title, price, specs);
   card.append(imageLink, details);
 
-  if (currentUser && post.authorId === currentUser.uid) {
-    const actions = document.createElement("div");
-    actions.className = "post-card-actions";
-    const editButton = createTextElement("button", "post-edit-button", "수정");
-    editButton.type = "button";
-    editButton.addEventListener("click", () => openPostForm(post));
-    const deleteButton = createTextElement("button", "post-delete-button", "삭제");
-    deleteButton.type = "button";
-    deleteButton.addEventListener("click", () => deletePost(post.id));
-    actions.append(editButton, deleteButton);
-    card.append(actions);
-  }
+  const actions = document.createElement("div");
+  actions.className = "post-card-actions";
+  const editButton = createTextElement("button", "post-edit-button", "수정");
+  editButton.type = "button";
+  editButton.addEventListener("click", () => openPostForm(post));
+  const deleteButton = createTextElement("button", "post-delete-button", "삭제");
+  deleteButton.type = "button";
+  deleteButton.addEventListener("click", () => deletePost(post.id));
+  actions.append(editButton, deleteButton);
+  card.append(actions);
 
   return card;
 }
@@ -151,8 +148,8 @@ function setConnectionError(error) {
 }
 
 function openPostForm(post = null) {
-  if (!database || !currentUser) {
-    postFormStatus.textContent = "관리자 설정이 완료되면 별도 로그인 없이 게시글을 등록할 수 있습니다.";
+  if (!database) {
+    postFormStatus.textContent = "Firebase 게시판 연결을 확인해 주세요.";
     postDialog.showModal();
     return;
   }
@@ -174,7 +171,7 @@ function openPostForm(post = null) {
 }
 
 async function deletePost(postId) {
-  if (!database || !currentUser) return;
+  if (!database) return;
   if (!window.confirm("이 게시글을 삭제할까요? 삭제한 게시글은 복구할 수 없습니다.")) return;
 
   try {
@@ -182,18 +179,18 @@ async function deletePost(postId) {
     setFirebaseStatus("게시글을 삭제했습니다.", "connected");
   } catch (error) {
     setConnectionError(error);
-    window.alert("게시글을 삭제하지 못했습니다. 작성자 권한과 Firestore 규칙을 확인해 주세요.");
+    window.alert("게시글을 삭제하지 못했습니다. Firestore 연결과 규칙을 확인해 주세요.");
   }
 }
 
 function handleRequestedEdit() {
   const requestedPostId = new URLSearchParams(window.location.search).get("edit");
-  if (!requestedPostId || requestedEditHandled || !currentUser) return;
+  if (!requestedPostId || requestedEditHandled) return;
 
   const post = posts.find((entry) => entry.id === requestedPostId);
   if (!post) return;
   requestedEditHandled = true;
-  if (post.authorId === currentUser.uid) openPostForm(post);
+  openPostForm(post);
 }
 
 searchForm.addEventListener("submit", (event) => {
@@ -227,8 +224,8 @@ document.querySelector("#cancel-post-form").addEventListener("click", () => post
 
 postForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (!database || !currentUser) {
-    postFormStatus.textContent = "관리자 설정이 완료되면 별도 로그인 없이 게시글을 등록할 수 있습니다.";
+  if (!database) {
+    postFormStatus.textContent = "Firebase 게시판 연결을 확인해 주세요.";
     return;
   }
 
@@ -262,7 +259,6 @@ postForm.addEventListener("submit", async (event) => {
     } else {
       await database.collection("posts").add({
         ...postData,
-        authorId: currentUser.uid,
         createdAt: timestamp,
         updatedAt: timestamp
       });
@@ -315,21 +311,8 @@ async function connectFirebase() {
     database.collection("posts").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
       posts = snapshot.docs.map((document) => ({ id: document.id, ...document.data() }));
       renderPosts();
-      if (currentUser) setFirebaseStatus("게시판 연결됨", "connected");
-      else setEmptyState(posts.length ? "인증 상태를 확인하고 있습니다." : "등록된 게시글이 없습니다. 첫 게시글을 등록해 보세요.");
+      setFirebaseStatus("공개 게시판 연결됨", "connected");
     }, setConnectionError);
-
-    try {
-      const credential = await firebase.auth().signInAnonymously();
-      currentUser = credential.user;
-      setFirebaseStatus("게시판 연결됨", "connected");
-      renderPosts();
-    } catch (error) {
-      const message = ["auth/configuration-not-found", "auth/operation-not-allowed", "auth/admin-restricted-operation"].includes(error.code)
-        ? "Firebase Console에서 익명 사용자 인증을 허용해 주세요."
-        : "Firebase 로그인에 실패했습니다.";
-      setFirebaseStatus(message, "local");
-    }
   } catch (error) {
     setConnectionError(error);
   }
