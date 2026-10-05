@@ -2,56 +2,71 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  match /admins/{userId} {
-    allow get: if request.auth != null && request.auth.uid == userId;
-    allow list, create, update, delete: if false;
-  }
-
-  match /posts/{postId} {
-    allow read: if true;
-    allow create, update: if isAdmin() && validPost(request.resource.data);
-    allow delete: if isAdmin();
-
-    match /comments/{commentId} {
-      allow read: if true;
-      allow create: if exists(/databases/$(database)/documents/posts/$(postId))
-        && validComment(request.resource.data);
-      allow update, delete: if false;
+    match /admins/{userId} {
+      allow get: if request.auth != null && request.auth.uid == userId;
+      allow list, create, update, delete: if false;
     }
-  }
 
-  function isAdmin() {
-    return request.auth != null
-      && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
-  }
+    match /posts/{postId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && validPost(request.resource.data);
+      allow delete: if isAdmin();
 
-  function validComment(data) {
-    return data.keys().hasOnly(['author', 'message', 'createdAt'])
-      && data.keys().hasAll(['author', 'message', 'createdAt'])
-      && data.author is string && data.author.size() > 0 && data.author.size() <= 40
-      && data.message is string && data.message.size() > 0 && data.message.size() <= 1000
-      && data.createdAt == request.time;
-  }
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if exists(/databases/$(database)/documents/posts/$(postId))
+          && validComment(request.resource.data);
+        allow update: if false;
+        allow delete: if isAdmin();
+      }
+
+      match /privateComments/{commentId} {
+        allow get, list: if isAdmin();
+        allow create: if exists(/databases/$(database)/documents/posts/$(postId))
+          && validComment(request.resource.data);
+        allow update: if false;
+        allow delete: if isAdmin();
+      }
+    }
+
+    function isAdmin() {
+      return request.auth != null
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    function validComment(data) {
+      return data.keys().hasOnly(['message', 'createdAt'])
+        && data.keys().hasAll(['message', 'createdAt'])
+        && data.message is string && data.message.size() > 0 && data.message.size() <= 1000
+        && data.createdAt == request.time;
+    }
 
     function validPost(data) {
       return data.keys().hasOnly([
-          'title', 'location', 'propertyType', 'dealType', 'price', 'area',
-          'rooms', 'bathrooms', 'imageUrl', 'description', 'createdAt', 'updatedAt'
+          'title', 'location', 'propertyType', 'dealType', 'price', 'description',
+          'area', 'rooms', 'bathrooms', 'imageUrl', 'createdAt', 'updatedAt',
+          'infoImageUrl', 'photoUrls', 'youtubeUrl', 'propertyTable', 'brokerTable'
         ])
         && data.keys().hasAll([
-          'title', 'location', 'propertyType', 'dealType', 'price', 'area',
-          'rooms', 'bathrooms', 'imageUrl', 'description', 'createdAt', 'updatedAt'
+          'title', 'location', 'propertyType', 'dealType', 'price', 'description',
+          'createdAt', 'updatedAt'
         ])
         && data.title is string && data.title.size() > 0 && data.title.size() <= 80
         && data.location is string && data.location.size() > 0 && data.location.size() <= 80
-        && data.propertyType in ['apartment', 'house', 'commercial', 'warehouse', 'presale']
+        && data.propertyType in ['apartment', 'house', 'commercial', 'warehouse', 'presale', 'other']
         && data.dealType in ['sale', 'lease', 'monthly']
         && data.price is string && data.price.size() > 0 && data.price.size() <= 40
-        && data.area is string && data.area.size() > 0 && data.area.size() <= 20
-        && data.rooms is string && data.rooms.size() > 0 && data.rooms.size() <= 12
-        && data.bathrooms is string && data.bathrooms.size() > 0 && data.bathrooms.size() <= 12
-        && data.imageUrl is string && data.imageUrl.size() > 0 && data.imageUrl.size() <= 1000
-        && data.description is string && data.description.size() > 0 && data.description.size() <= 3000;
+        && data.description is string && data.description.size() > 0 && data.description.size() <= 10000
+        && data.createdAt is timestamp && data.updatedAt is timestamp
+        && (!('area' in data) || (data.area is string && data.area.size() <= 20))
+        && (!('rooms' in data) || (data.rooms is string && data.rooms.size() <= 12))
+        && (!('bathrooms' in data) || (data.bathrooms is string && data.bathrooms.size() <= 12))
+        && (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 1000))
+        && (!('infoImageUrl' in data) || (data.infoImageUrl is string && data.infoImageUrl.size() <= 1000))
+        && (!('photoUrls' in data) || (data.photoUrls is list && data.photoUrls.size() <= 20))
+        && (!('youtubeUrl' in data) || (data.youtubeUrl is string && data.youtubeUrl.size() <= 500))
+        && (!('propertyTable' in data) || (data.propertyTable is list && data.propertyTable.size() <= 100))
+        && (!('brokerTable' in data) || (data.brokerTable is list && data.brokerTable.size() <= 20));
     }
   }
 }

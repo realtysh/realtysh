@@ -15,6 +15,15 @@ const adminFormStatus = document.querySelector("#admin-form-status");
 const postFormTitle = document.querySelector("#post-form-title");
 const postFormStatus = document.querySelector("#post-form-status");
 const savePostButton = document.querySelector("#save-post");
+const photosInput = postForm.elements.namedItem("photos");
+const existingPostMedia = document.querySelector("#existing-post-media");
+const selectedPhotoNames = document.querySelector("#selected-photo-names");
+const propertyTableInput = document.querySelector("#property-table-paste");
+const propertyTablePreviewWrap = document.querySelector("#property-table-preview-wrap");
+const propertyTablePreview = document.querySelector("#property-table-preview");
+const propertyTableStatus = document.querySelector("#property-table-status");
+const clearPropertyTableButton = document.querySelector("#clear-property-table");
+const brokerTablePreview = document.querySelector("#broker-table-preview");
 const menuToggle = document.querySelector(".menu-toggle");
 const mainNav = document.querySelector("#main-nav");
 const adminAccess = document.querySelector("#admin-access");
@@ -28,7 +37,8 @@ const postTypes = {
   house: "단독주택",
   commercial: "상가",
   warehouse: "공장/창고",
-  presale: "분양권"
+  presale: "분양권",
+  other: "기타"
 };
 const dealTypes = {
   sale: "매매",
@@ -42,6 +52,15 @@ let isAdmin = false;
 let selectedKind = "all";
 let editingPostId = null;
 let requestedEditHandled = false;
+let currentPropertyTable = [];
+let currentBrokerTable = [];
+const defaultBrokerTable = [
+  ["상호(명칭)", "현진공인중개사사무소"],
+  ["소재지", "경기도 시흥시 신천로 100번길36(신천동 782)"],
+  ["연락처", "010-3664-1861 / 031-313-1862"],
+  ["등록번호", "41390-2024-00025"],
+  ["대표자 성명", "정선진"]
+];
 
 function setFirebaseStatus(message, state) {
   firebaseStatus.textContent = message;
@@ -79,38 +98,46 @@ function createPostCard(post) {
     .join(" ")
     .toLocaleLowerCase("ko");
 
-  const imageLink = document.createElement("a");
-  imageLink.className = "property-image-link";
-  imageLink.href = `post.html?id=${encodeURIComponent(post.id)}`;
-  imageLink.setAttribute("aria-label", `${post.title} 상세 게시글 보기`);
+  const detailLink = document.createElement("a");
+  detailLink.className = "property-list-link";
+  detailLink.href = `post.html?id=${encodeURIComponent(post.id)}`;
+  detailLink.setAttribute("aria-label", `${post.title || "매물"} 상세 게시글 보기`);
 
-  const image = document.createElement("img");
-  image.src = safeImageUrl(post.imageUrl);
-  image.alt = post.title;
-  image.loading = "lazy";
-  imageLink.append(image);
-  imageLink.append(createTextElement("span", "property-tag", `${postTypes[post.propertyType] || "매물"} · ${dealTypes[post.dealType] || "거래"}`));
+  const thumbnail = document.createElement("span");
+  thumbnail.className = "property-thumbnail";
+  const imageUrl = [post.photoUrls?.[0], post.imageUrl]
+    .map(safeImageUrl)
+    .find(Boolean);
+  if (imageUrl) {
+    const image = document.createElement("img");
+    image.src = imageUrl;
+    image.alt = "";
+    image.loading = "lazy";
+    image.addEventListener("error", () => {
+      thumbnail.replaceChildren(createTextElement("span", "property-placeholder", "사진 준비중"));
+    }, { once: true });
+    thumbnail.append(image);
+  } else {
+    thumbnail.append(createTextElement("span", "property-placeholder", "사진 준비중"));
+  }
 
   const details = document.createElement("div");
-  details.className = "property-details";
+  details.className = "property-list-details";
   const meta = document.createElement("div");
-  meta.className = "property-meta";
-  meta.append(createTextElement("span", "", post.location));
-  meta.append(createTextElement("span", "", `${postTypes[post.propertyType] || "매물"} · ${dealTypes[post.dealType] || "거래"}`));
+  meta.className = "property-list-meta";
+  meta.append(createTextElement("span", "property-type-label", postTypes[post.propertyType] || "매물"));
+  meta.append(createTextElement("span", "", dealTypes[post.dealType] || "거래"));
 
   const title = document.createElement("h3");
-  const titleLink = document.createElement("a");
-  titleLink.href = imageLink.href;
-  titleLink.textContent = post.title;
-  title.append(titleLink);
-
+  title.textContent = post.title || "제목 없는 매물";
   const price = createTextElement("p", "property-price", post.price);
-  const specs = document.createElement("div");
-  specs.className = "property-specs";
-  specs.append(createTextElement("span", "", `전용 ${post.area}`));
-  specs.append(createTextElement("span", "", `방 ${post.rooms} · 욕실 ${post.bathrooms}`));
-  details.append(meta, title, price, specs);
-  card.append(imageLink, details);
+  const location = createTextElement("p", "property-list-location", post.location || "위치 미입력");
+  details.append(meta, title, price, location);
+  if (post.description) {
+    details.append(createTextElement("p", "property-list-summary", post.description));
+  }
+  detailLink.append(thumbnail, details);
+  card.append(detailLink);
 
   const actions = document.createElement("div");
   actions.className = "post-card-actions admin-only";
@@ -185,7 +212,7 @@ function updateAdminControls() {
 function connectAdminAuth() {
   auth.onAuthStateChanged(async (user) => {
     isAdmin = false;
-    if (user) {
+    if (user && !user.isAnonymous) {
       try {
         const adminSnapshot = await database.collection("admins").doc(user.uid).get();
         if (auth.currentUser?.uid !== user.uid) return;
@@ -223,14 +250,41 @@ function openPostForm(post = null) {
   editingPostId = post?.id || null;
   postForm.reset();
   postFormStatus.textContent = "";
+  propertyTableStatus.textContent = "";
+  currentPropertyTable = [];
+  currentBrokerTable = post ? normalizePropertyTable(post.brokerTable) : normalizePropertyTable(defaultBrokerTable);
+  renderPropertyTablePreview();
+  renderBrokerTablePreview();
   postFormTitle.textContent = editingPostId ? "게시글 수정" : "매물 게시글 등록";
   savePostButton.textContent = editingPostId ? "수정 저장" : "게시글 등록";
+  existingPostMedia.replaceChildren();
+  existingPostMedia.hidden = true;
+  selectedPhotoNames.textContent = "선택한 사진이 없습니다.";
 
   if (post) {
     Object.entries(post).forEach(([key, value]) => {
       const field = postForm.elements.namedItem(key);
       if (field && typeof value === "string") field.value = value;
     });
+    currentPropertyTable = normalizePropertyTable(post.propertyTable);
+    renderPropertyTablePreview();
+    const existingPhotos = Array.isArray(post.photoUrls) ? post.photoUrls : [];
+    if (existingPhotos.length) {
+      existingPostMedia.hidden = false;
+      existingPhotos.forEach((url, index) => {
+        const label = document.createElement("label");
+        label.className = "existing-photo-option";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.name = "removePhoto";
+        checkbox.value = url;
+        const image = document.createElement("img");
+        image.src = safeImageUrl(url);
+        image.alt = `기존 현장 사진 ${index + 1}`;
+        label.append(checkbox, image, createTextElement("span", "", "삭제"));
+        existingPostMedia.append(label);
+      });
+    }
   }
 
   postDialog.showModal();
@@ -359,42 +413,250 @@ adminDialog.addEventListener("click", (event) => {
 document.querySelector("#close-post-form").addEventListener("click", () => postDialog.close());
 document.querySelector("#cancel-post-form").addEventListener("click", () => postDialog.close());
 
+photosInput.addEventListener("change", () => {
+  const files = [...photosInput.files];
+  selectedPhotoNames.textContent = files.length
+    ? `${files.length}장 선택됨: ${files.map((file) => file.name).join(", ")}`
+    : "선택한 사진이 없습니다.";
+});
+
+function validateImageFiles(files, maxCount = Infinity) {
+  const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+  if (files.length > maxCount) return `사진은 최대 ${maxCount}장까지 업로드할 수 있습니다.`;
+  if (files.some((file) => !allowedTypes.includes(file.type))) return "JPG, PNG 또는 WEBP 이미지 파일만 업로드할 수 있습니다.";
+  if (files.some((file) => file.size > 10 * 1024 * 1024)) return "이미지 파일은 각각 10MB 이하로 선택해 주세요.";
+  return "";
+}
+
+function normalizePropertyTable(value) {
+  if (!Array.isArray(value)) return [];
+  const rows = value
+    .map((row) => Array.isArray(row) ? row : row?.cells)
+    .filter(Array.isArray)
+    .map((row) => row.map((cell) => (cell == null ? "" : String(cell))));
+  const columnCount = Math.max(0, ...rows.map((row) => row.length));
+  return rows.map((row) => Array.from({ length: columnCount }, (_, index) => row[index] || ""));
+}
+
+function serializePropertyTable(table) {
+  return table.map((cells) => ({ cells }));
+}
+
+function parsePastedPropertyTable(value) {
+  let text = value.replace(/\r\n?/g, "\n");
+  if (text.endsWith("\n")) text = text.slice(0, -1);
+  if (!text) return [];
+
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuotes = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const character = text[index];
+    if (character === '"') {
+      if (inQuotes && text[index + 1] === '"') {
+        cell += '"';
+        index += 1;
+      } else if (inQuotes) {
+        inQuotes = false;
+      } else if (cell.length === 0) {
+        inQuotes = true;
+      } else {
+        cell += character;
+      }
+    } else if (character === "\t" && !inQuotes) {
+      row.push(cell);
+      cell = "";
+    } else if (character === "\n" && !inQuotes) {
+      row.push(cell);
+      rows.push(row);
+      row = [];
+      cell = "";
+    } else {
+      cell += character;
+    }
+  }
+  row.push(cell);
+  rows.push(row);
+
+  const columnCount = Math.max(0, ...rows.map((entry) => entry.length));
+  return rows.map((entry) => Array.from({ length: columnCount }, (_, index) => entry[index] || ""));
+}
+
+function validatePropertyTable(table) {
+  if (table.length > 100) return "매물정보표는 최대 100행까지 입력할 수 있습니다.";
+  if ((table[0]?.length || 0) > 20) return "매물정보표는 최대 20열까지 입력할 수 있습니다.";
+  const characterCount = table.reduce((total, row) => total + row.reduce((sum, cell) => sum + cell.length, 0), 0);
+  if (table.some((row) => row.some((cell) => cell.length > 500)) || characterCount > 20000) {
+    return "표 셀은 각각 500자, 전체 20,000자 이내로 입력해 주세요.";
+  }
+  return "";
+}
+
+function renderPropertyTablePreview() {
+  propertyTablePreview.replaceChildren();
+  propertyTablePreviewWrap.hidden = currentPropertyTable.length === 0;
+  currentPropertyTable.forEach((row, rowIndex) => {
+    const tableRow = document.createElement("tr");
+    row.forEach((value, columnIndex) => {
+      const cell = document.createElement(columnIndex % 2 === 0 ? "th" : "td");
+      cell.textContent = value;
+      cell.contentEditable = "true";
+      cell.spellcheck = false;
+      cell.dataset.row = String(rowIndex);
+      cell.dataset.column = String(columnIndex);
+      cell.setAttribute("aria-label", `${rowIndex + 1}행 ${columnIndex + 1}열`);
+      tableRow.append(cell);
+    });
+    propertyTablePreview.append(tableRow);
+  });
+}
+
+function renderBrokerTablePreview() {
+  brokerTablePreview.replaceChildren();
+  currentBrokerTable.forEach((row, rowIndex) => {
+    const tableRow = document.createElement("tr");
+    row.forEach((value, columnIndex) => {
+      const cell = document.createElement(columnIndex % 2 === 0 ? "th" : "td");
+      cell.textContent = value;
+      cell.contentEditable = "true";
+      cell.spellcheck = false;
+      cell.dataset.row = String(rowIndex);
+      cell.dataset.column = String(columnIndex);
+      cell.setAttribute("aria-label", `${rowIndex + 1}행 ${columnIndex + 1}열`);
+      tableRow.append(cell);
+    });
+    brokerTablePreview.append(tableRow);
+  });
+}
+
+propertyTableInput.addEventListener("input", () => {
+  currentPropertyTable = parsePastedPropertyTable(propertyTableInput.value);
+  renderPropertyTablePreview();
+  propertyTableStatus.textContent = validatePropertyTable(currentPropertyTable);
+});
+
+brokerTablePreview.addEventListener("input", (event) => {
+  const cell = event.target.closest("[data-row][data-column]");
+  if (!cell) return;
+  currentBrokerTable[Number(cell.dataset.row)][Number(cell.dataset.column)] = cell.textContent;
+});
+
+propertyTablePreview.addEventListener("input", (event) => {
+  const cell = event.target.closest("[data-row][data-column]");
+  if (!cell) return;
+  currentPropertyTable[Number(cell.dataset.row)][Number(cell.dataset.column)] = cell.textContent;
+  propertyTableStatus.textContent = validatePropertyTable(currentPropertyTable);
+});
+
+clearPropertyTableButton.addEventListener("click", () => {
+  propertyTableInput.value = "";
+  currentPropertyTable = [];
+  propertyTableStatus.textContent = "";
+  renderPropertyTablePreview();
+});
+
+async function uploadImage(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", "realtysh_upload");
+
+  const createUploadError = (message) => {
+    const error = new Error(`${file.name}: ${message}`);
+    error.name = "CloudinaryUploadError";
+    return error;
+  };
+
+  let response;
+  try {
+    response = await fetch("https://api.cloudinary.com/v1_1/lcrmc4u0/image/upload", {
+      method: "POST",
+      body: formData
+    });
+  } catch {
+    throw createUploadError("Cloudinary에 연결하지 못했습니다. 네트워크를 확인해 주세요.");
+  }
+
+  const result = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw createUploadError(result?.error?.message || `Cloudinary 업로드 실패 (${response.status})`);
+  }
+  if (typeof result?.secure_url !== "string" || !result.secure_url.startsWith("https://res.cloudinary.com/")) {
+    throw createUploadError("Cloudinary에서 유효한 보안 이미지 주소를 받지 못했습니다.");
+  }
+  return result.secure_url;
+}
+
 postForm.addEventListener("submit", async (event) => {
   event.preventDefault();
-  if (!database) {
-    postFormStatus.textContent = "Firebase 게시판 연결을 확인해 주세요.";
+  if (!database || !isAdmin) {
+    postFormStatus.textContent = !isAdmin
+      ? "관리자 로그인 후 매물을 등록할 수 있습니다."
+      : "Firestore 연결을 확인해 주세요.";
     return;
   }
 
   const formData = new FormData(postForm);
-  const postData = Object.fromEntries(formData.entries());
-  postData.title = postData.title.trim();
-  postData.location = postData.location.trim();
-  postData.price = postData.price.trim();
-  postData.area = postData.area.trim();
-  postData.rooms = postData.rooms.trim();
-  postData.bathrooms = postData.bathrooms.trim();
-  postData.imageUrl = safeImageUrl(postData.imageUrl);
-  postData.description = postData.description.trim();
-
-  if (!postData.imageUrl) {
-    postFormStatus.textContent = "http 또는 https 이미지 주소를 입력해 주세요.";
+  const photoFiles = [...photosInput.files];
+  const currentPost = editingPostId ? posts.find((post) => post.id === editingPostId) : null;
+  const removedPhotos = new Set(formData.getAll("removePhoto"));
+  const currentPhotoUrls = Array.isArray(currentPost?.photoUrls) ? currentPost.photoUrls : [];
+  const keptPhotoCount = currentPhotoUrls.filter((url) => !removedPhotos.has(url)).length;
+  const invalidPhotos = validateImageFiles(photoFiles, Math.max(0, 20 - keptPhotoCount));
+  if (invalidPhotos) {
+    postFormStatus.textContent = invalidPhotos;
     return;
   }
+  const invalidPropertyTable = validatePropertyTable(currentPropertyTable);
+  if (invalidPropertyTable) {
+    propertyTableStatus.textContent = invalidPropertyTable;
+    return;
+  }
+  const youtubeUrl = formData.get("youtubeUrl").trim();
+  if (youtubeUrl) {
+    try {
+      const url = new URL(youtubeUrl);
+      if (!["youtube.com", "www.youtube.com", "youtu.be", "m.youtube.com"].includes(url.hostname)) throw new Error("Invalid YouTube URL");
+    } catch {
+      postFormStatus.textContent = "올바른 YouTube 영상 URL을 입력해 주세요.";
+      return;
+    }
+  }
+  const postData = {
+    title: formData.get("title").trim(),
+    propertyType: formData.get("propertyType"),
+    dealType: formData.get("dealType"),
+    price: formData.get("price").trim(),
+    location: formData.get("location").trim(),
+    description: formData.get("description").trim(),
+    youtubeUrl,
+    photoUrls: currentPhotoUrls,
+    propertyTable: serializePropertyTable(normalizePropertyTable(currentPropertyTable)),
+    brokerTable: serializePropertyTable(normalizePropertyTable(currentBrokerTable))
+  };
+  postData.photoUrls = postData.photoUrls.filter((url) => !removedPhotos.has(url));
 
   savePostButton.disabled = true;
   postFormStatus.textContent = "저장 중입니다.";
 
   try {
+    const postReference = editingPostId
+      ? database.collection("posts").doc(editingPostId)
+      : database.collection("posts").doc();
+    for (const file of photoFiles) {
+      postFormStatus.textContent = `사진 업로드 중입니다... (${file.name})`;
+      postData.photoUrls.push(await uploadImage(file));
+    }
+    postData.imageUrl = postData.photoUrls[0] || (currentPhotoUrls.length ? "" : currentPost?.imageUrl || "");
     const timestamp = firebase.firestore.FieldValue.serverTimestamp();
     if (editingPostId) {
-      await database.collection("posts").doc(editingPostId).update({
+      await postReference.update({
         ...postData,
         updatedAt: timestamp
       });
       setFirebaseStatus("게시글을 수정했습니다.", "connected");
     } else {
-      await database.collection("posts").add({
+      await postReference.set({
         ...postData,
         createdAt: timestamp,
         updatedAt: timestamp
@@ -405,10 +667,20 @@ postForm.addEventListener("submit", async (event) => {
     postForm.reset();
     editingPostId = null;
   } catch (error) {
-    setConnectionError(error);
-    postFormStatus.textContent = error.code === "permission-denied"
-      ? "저장 권한이 없습니다. Firestore 규칙을 확인해 주세요."
-      : "저장에 실패했습니다. Firebase 연결을 확인해 주세요.";
+    if (error.name === "CloudinaryUploadError") {
+      console.error("Cloudinary 현장 사진 업로드에 실패했습니다.", error);
+      postFormStatus.textContent = `이미지 업로드에 실패했습니다. Firestore에는 저장하지 않았습니다. ${error.message}`;
+    } else {
+      console.error("Firestore 게시글 저장에 실패했습니다.", {
+        code: error.code || "unknown",
+        message: error.message || "상세 오류 메시지가 없습니다.",
+        error
+      });
+      setConnectionError(error);
+      const errorCode = typeof error.code === "string" ? ` (${error.code})` : "";
+      const errorMessage = typeof error.message === "string" ? error.message : "상세 오류 메시지가 없습니다.";
+      postFormStatus.textContent = `저장에 실패했습니다${errorCode}: ${errorMessage}`;
+    }
   } finally {
     savePostButton.disabled = false;
   }

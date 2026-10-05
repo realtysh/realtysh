@@ -165,16 +165,33 @@
       </div>
       <form id="post-form">
         <div class="post-form-grid">
-          <label class="post-field post-field-wide"><span>게시글 제목</span><input name="title" required maxlength="80" placeholder="예: 햇살이 잘 드는 성수동 아파트"></label>
-          <label class="post-field"><span>지역</span><input name="location" required maxlength="80" placeholder="예: 서울 성동구 성수동"></label>
-          <label class="post-field"><span>매물 종류</span><select name="propertyType" required><option value="commercial">상가</option><option value="warehouse">공장/창고</option><option value="apartment">아파트</option><option value="presale">분양권</option><option value="house">단독주택</option></select></label>
+          <label class="post-field post-field-wide"><span>매물 제목</span><input name="title" required maxlength="80" placeholder="예: 시흥 신천동 역세권 상가"></label>
+          <label class="post-field"><span>매물 종류</span><select name="propertyType" required><option value="commercial">상가</option><option value="warehouse">공장·창고</option><option value="apartment">아파트</option><option value="presale">분양권</option><option value="other">기타</option><option value="house">단독주택 (기존)</option></select></label>
           <label class="post-field"><span>거래 유형</span><select name="dealType" required><option value="sale">매매</option><option value="lease">전세</option><option value="monthly">월세</option></select></label>
-          <label class="post-field"><span>가격</span><input name="price" required maxlength="40" placeholder="예: 8억 5,000만원"></label>
-          <label class="post-field"><span>전용 면적</span><input name="area" required maxlength="20" placeholder="예: 84㎡"></label>
-          <label class="post-field"><span>방 개수</span><input name="rooms" required maxlength="12" placeholder="예: 3개"></label>
-          <label class="post-field"><span>욕실 개수</span><input name="bathrooms" required maxlength="12" placeholder="예: 2개"></label>
-          <label class="post-field post-field-wide"><span>대표 사진 URL</span><input name="imageUrl" type="url" required maxlength="1000" placeholder="https://..."></label>
-          <label class="post-field post-field-wide"><span>상세 설명</span><textarea name="description" required maxlength="3000" rows="5" placeholder="매물의 특징과 주변 환경을 소개해 주세요."></textarea></label>
+          <label class="post-field"><span>가격</span><input name="price" required maxlength="40" placeholder="예: 매매 3억 5,000만원"></label>
+          <label class="post-field"><span>간단한 위치</span><input name="location" required maxlength="80" placeholder="예: 시흥시 신천동"></label>
+          <section class="post-field post-field-wide property-table-editor" aria-labelledby="property-table-label">
+            <h3 id="property-table-label">매물정보표</h3>
+            <p>Excel에서 셀 범위를 복사한 뒤 아래 입력란을 선택하고 Ctrl+V로 붙여넣어 주세요. 붙여넣은 셀은 실제 텍스트 표로 저장됩니다.</p>
+            <label class="post-field" for="property-table-paste"><span>Excel 표 붙여넣기</span><textarea id="property-table-paste" rows="5" placeholder="Excel 셀을 복사한 뒤 여기에 붙여넣으세요."></textarea></label>
+            <div class="property-table-preview-wrap" id="property-table-preview-wrap" hidden>
+              <table class="property-table-preview" aria-label="매물정보표 미리보기"><tbody id="property-table-preview"></tbody></table>
+            </div>
+            <p class="property-table-status" id="property-table-status" role="status" aria-live="polite"></p>
+            <button class="form-cancel property-table-clear" id="clear-property-table" type="button">표 지우기</button>
+          </section>
+          <section class="post-field post-field-wide property-table-editor" aria-labelledby="broker-table-label">
+            <h3 id="broker-table-label">중개사무소 정보</h3>
+            <p>이 정보는 매물 게시글에 저장됩니다. 각 셀을 눌러 해당 매물의 정보로 수정할 수 있습니다.</p>
+            <div class="property-table-preview-wrap" id="broker-table-preview-wrap">
+              <table class="property-table-preview" aria-label="중개사무소 정보 미리보기"><tbody id="broker-table-preview"></tbody></table>
+            </div>
+          </section>
+          <div class="post-field post-field-wide existing-post-media" id="existing-post-media" hidden></div>
+          <label class="post-field post-field-wide file-picker"><span>현장 사진 (여러 장 선택 가능, JPG·PNG·WEBP / 각 최대 10MB)</span><span class="file-picker-control"><span>사진 추가</span><input name="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple></span></label>
+          <p class="selected-files post-field-wide" id="selected-photo-names">선택한 사진이 없습니다.</p>
+          <label class="post-field post-field-wide"><span>매물 상세 설명</span><textarea name="description" required maxlength="10000" rows="9" placeholder="매물의 특징과 주변 환경을 편하게 작성해 주세요."></textarea></label>
+          <label class="post-field post-field-wide"><span>YouTube 영상 URL (선택)</span><input name="youtubeUrl" type="url" maxlength="500" placeholder="https://www.youtube.com/watch?v=..."></label>
         </div>
         <p class="post-form-status" id="post-form-status" role="status" aria-live="polite"></p>
         <div class="post-form-actions">
