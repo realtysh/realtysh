@@ -1,22 +1,34 @@
 const searchForm = document.querySelector("#property-search");
 const searchQuery = document.querySelector("#search-query");
 const searchDeal = document.querySelector("#search-deal");
-const filterButtons = [...document.querySelectorAll(".filter-tab")];
+const filterButtons = [...document.querySelectorAll(".category-button")];
 const propertyGrid = document.querySelector("#property-grid");
 const resultCount = document.querySelector("#result-count");
+const homesTitle = document.querySelector("#homes-title");
 const emptyState = document.querySelector("#empty-state");
 const firebaseStatus = document.querySelector("#firebase-status");
 const postDialog = document.querySelector("#post-dialog");
+const adminDialog = document.querySelector("#admin-dialog");
 const postForm = document.querySelector("#post-form");
+const adminForm = document.querySelector("#admin-form");
+const adminFormStatus = document.querySelector("#admin-form-status");
 const postFormTitle = document.querySelector("#post-form-title");
 const postFormStatus = document.querySelector("#post-form-status");
 const savePostButton = document.querySelector("#save-post");
 const menuToggle = document.querySelector(".menu-toggle");
 const mainNav = document.querySelector("#main-nav");
+const adminAccess = document.querySelector("#admin-access");
+const postCreateButton = document.querySelector("#post-create");
+const homeView = document.querySelector("#home-view");
+const listingView = document.querySelector("#listing-view");
+const officeCardSection = document.querySelector("#contact");
 const postTypes = {
+  all: "전체",
   apartment: "아파트",
   house: "단독주택",
-  commercial: "상가"
+  commercial: "상가",
+  warehouse: "공장/창고",
+  presale: "분양권"
 };
 const dealTypes = {
   sale: "매매",
@@ -24,7 +36,9 @@ const dealTypes = {
   monthly: "월세"
 };
 let database = null;
+let auth = null;
 let posts = [];
+let isAdmin = false;
 let selectedKind = "all";
 let editingPostId = null;
 let requestedEditHandled = false;
@@ -99,7 +113,8 @@ function createPostCard(post) {
   card.append(imageLink, details);
 
   const actions = document.createElement("div");
-  actions.className = "post-card-actions";
+  actions.className = "post-card-actions admin-only";
+  actions.hidden = !isAdmin;
   const editButton = createTextElement("button", "post-edit-button", "수정");
   editButton.type = "button";
   editButton.addEventListener("click", () => openPostForm(post));
@@ -133,10 +148,61 @@ function updateListings() {
   }
 }
 
+function showListings(kind = selectedKind) {
+  selectedKind = kind;
+  homeView.hidden = true;
+  listingView.hidden = false;
+  officeCardSection.hidden = true;
+  filterButtons.forEach((button) => {
+    const isActive = button.dataset.filter === selectedKind;
+    button.classList.toggle("is-active", isActive);
+    button.setAttribute("aria-pressed", String(isActive));
+  });
+  homesTitle.textContent = `${postTypes[selectedKind]} 매물`;
+  updateListings();
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function showHome() {
+  homeView.hidden = false;
+  listingView.hidden = true;
+  officeCardSection.hidden = false;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
 function renderPosts() {
   propertyGrid.replaceChildren(...posts.map(createPostCard));
   updateListings();
   handleRequestedEdit();
+}
+
+function updateAdminControls() {
+  adminAccess.textContent = isAdmin ? "관리자 로그아웃" : "관리자 로그인";
+  postCreateButton.hidden = !isAdmin;
+  renderPosts();
+}
+
+function connectAdminAuth() {
+  auth.onAuthStateChanged(async (user) => {
+    isAdmin = false;
+    if (user) {
+      try {
+        const adminSnapshot = await database.collection("admins").doc(user.uid).get();
+        if (auth.currentUser?.uid !== user.uid) return;
+        if (adminSnapshot.exists) {
+          isAdmin = true;
+        } else {
+          await auth.signOut();
+          adminFormStatus.textContent = "관리자 권한이 확인되지 않는 계정입니다.";
+          adminDialog.showModal();
+        }
+      } catch (error) {
+        console.error("관리자 권한 확인에 실패했습니다.", error);
+        adminFormStatus.textContent = "관리자 권한을 확인하지 못했습니다. Firestore 규칙을 확인해 주세요.";
+      }
+    }
+    updateAdminControls();
+  });
 }
 
 function setConnectionError(error) {
@@ -148,8 +214,8 @@ function setConnectionError(error) {
 }
 
 function openPostForm(post = null) {
-  if (!database) {
-    postFormStatus.textContent = "Firebase 게시판 연결을 확인해 주세요.";
+  if (!database || !isAdmin) {
+    postFormStatus.textContent = isAdmin ? "Firebase 게시판 연결을 확인해 주세요." : "관리자 로그인 후 매물을 등록할 수 있습니다.";
     postDialog.showModal();
     return;
   }
@@ -171,7 +237,7 @@ function openPostForm(post = null) {
 }
 
 async function deletePost(postId) {
-  if (!database) return;
+  if (!database || !isAdmin) return;
   if (!window.confirm("이 게시글을 삭제할까요? 삭제한 게시글은 복구할 수 없습니다.")) return;
 
   try {
@@ -188,7 +254,7 @@ function handleRequestedEdit() {
   if (!requestedPostId || requestedEditHandled) return;
 
   const post = posts.find((entry) => entry.id === requestedPostId);
-  if (!post) return;
+  if (!post || !isAdmin) return;
   requestedEditHandled = true;
   openPostForm(post);
 }
@@ -201,22 +267,93 @@ searchForm.addEventListener("submit", (event) => {
 
 filterButtons.forEach((button) => {
   button.addEventListener("click", () => {
-    selectedKind = button.dataset.filter;
-    filterButtons.forEach((filterButton) => {
-      const isActive = filterButton === button;
-      filterButton.classList.toggle("is-active", isActive);
-      filterButton.setAttribute("aria-pressed", String(isActive));
-    });
-    updateListings();
+    showListings(button.dataset.filter);
+    if (window.location.hash !== "#homes") window.history.pushState(null, "", "#homes");
   });
 });
 
-document.querySelectorAll(".post-create-trigger").forEach((button) => {
-  button.addEventListener("click", () => {
-    mainNav.classList.remove("is-open");
-    menuToggle.setAttribute("aria-expanded", "false");
-    openPostForm();
+document.querySelectorAll('a[href="#homes"]').forEach((link) => {
+  link.addEventListener("click", (event) => {
+    event.preventDefault();
+    showListings("all");
+    if (window.location.hash !== "#homes") window.history.pushState(null, "", "#homes");
   });
+});
+
+document.querySelectorAll('a[href="#top"], a[href="#contact"]').forEach((link) => {
+  link.addEventListener("click", (event) => {
+    event.preventDefault();
+    showHome();
+    if (window.location.hash !== link.hash) window.history.pushState(null, "", link.hash);
+    if (link.hash === "#contact") officeCardSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+});
+
+window.addEventListener("popstate", () => {
+  if (window.location.hash === "#homes") showListings("all");
+  else {
+    showHome();
+    if (window.location.hash === "#contact") officeCardSection.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+});
+
+if (window.location.hash === "#homes") showListings("all");
+
+postCreateButton.addEventListener("click", () => openPostForm());
+
+adminAccess.addEventListener("click", async () => {
+  mainNav.classList.remove("is-open");
+  menuToggle.setAttribute("aria-expanded", "false");
+  if (isAdmin) {
+    try {
+      await auth.signOut();
+      adminFormStatus.textContent = "";
+    } catch (error) {
+      console.error("관리자 로그아웃에 실패했습니다.", error);
+      setFirebaseStatus("관리자 로그아웃에 실패했습니다.", "local");
+    }
+    return;
+  }
+  adminForm.reset();
+  adminFormStatus.textContent = "";
+  adminDialog.showModal();
+});
+
+document.querySelector("#close-admin-dialog").addEventListener("click", () => adminDialog.close());
+document.querySelector("#cancel-admin-login").addEventListener("click", () => adminDialog.close());
+
+adminForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!auth) {
+    adminFormStatus.textContent = "Firebase 설정을 완료해야 관리자 로그인을 사용할 수 있습니다.";
+    return;
+  }
+  const submitButton = document.querySelector("#admin-login-submit");
+  const formData = new FormData(adminForm);
+  submitButton.disabled = true;
+  adminFormStatus.textContent = "로그인 중입니다.";
+  try {
+    const credential = await auth.signInWithEmailAndPassword(formData.get("email").trim(), formData.get("password"));
+    const adminSnapshot = await database.collection("admins").doc(credential.user.uid).get();
+    if (!adminSnapshot.exists) {
+      await auth.signOut();
+      adminFormStatus.textContent = "관리자 권한이 없는 계정입니다.";
+      return;
+    }
+    adminDialog.close();
+    adminForm.reset();
+  } catch (error) {
+    console.error("관리자 로그인에 실패했습니다.", error);
+    adminFormStatus.textContent = error.code === "auth/invalid-credential"
+      ? "이메일 또는 비밀번호를 확인해 주세요."
+      : "로그인에 실패했습니다. Firebase Authentication 설정을 확인해 주세요.";
+  } finally {
+    submitButton.disabled = false;
+  }
+});
+
+adminDialog.addEventListener("click", (event) => {
+  if (event.target === adminDialog) adminDialog.close();
 });
 
 document.querySelector("#close-post-form").addEventListener("click", () => postDialog.close());
@@ -308,6 +445,8 @@ async function connectFirebase() {
   try {
     if (firebase.apps.length === 0) firebase.initializeApp(config);
     database = firebase.firestore();
+    auth = firebase.auth();
+    connectAdminAuth();
     database.collection("posts").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
       posts = snapshot.docs.map((document) => ({ id: document.id, ...document.data() }));
       renderPosts();

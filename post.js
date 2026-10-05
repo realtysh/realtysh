@@ -2,14 +2,25 @@ const postStatus = document.querySelector("#post-page-status");
 const postDetail = document.querySelector("#post-detail");
 const ownerActions = document.querySelector("#post-owner-actions");
 const deleteButton = document.querySelector("#post-delete-button");
+const commentsSection = document.querySelector("#comments-section");
+const commentForm = document.querySelector("#comment-form");
+const commentList = document.querySelector("#comment-list");
+const commentsStatus = document.querySelector("#comments-status");
+const commentFormStatus = document.querySelector("#comment-form-status");
+const commentSubmit = document.querySelector("#comment-submit");
 const postId = new URLSearchParams(window.location.search).get("id");
 let database = null;
+let auth = null;
 let unsubscribePost = null;
+let unsubscribeComments = null;
+let isAdmin = false;
 
 const propertyTypes = {
   apartment: "아파트",
   house: "단독주택",
-  commercial: "상가"
+  commercial: "상가",
+  warehouse: "공장/창고",
+  presale: "분양권"
 };
 
 const dealTypes = {
@@ -67,7 +78,7 @@ function renderPost(post) {
   appendFact(facts, "방 개수", post.rooms);
   appendFact(facts, "욕실 개수", post.bathrooms);
 
-  ownerActions.hidden = false;
+  ownerActions.hidden = !isAdmin;
   document.querySelector("#post-edit-link").href = `index.html?edit=${encodeURIComponent(postId)}`;
   deleteButton.onclick = async () => {
     if (!window.confirm("공개 게시판입니다. 이 게시글을 삭제할까요? 삭제한 게시글은 복구할 수 없습니다.")) return;
@@ -80,10 +91,83 @@ function renderPost(post) {
     }
   };
 
-  document.title = `${post.title || "매물 게시글"} | RealtySH`;
+  document.title = `${post.title || "매물 게시글"} | 현진부동산`;
   postStatus.hidden = true;
   postDetail.hidden = false;
+  commentsSection.hidden = false;
+  if (!unsubscribeComments) connectComments();
 }
+
+function renderComments(snapshot) {
+  const comments = snapshot.docs;
+  commentList.replaceChildren(...comments.map((document) => {
+    const comment = document.data();
+    const item = document.createElement("li");
+    item.className = "comment-item";
+    const heading = document.createElement("div");
+    heading.className = "comment-meta";
+    const author = document.createElement("strong");
+    author.textContent = comment.author || "익명";
+    const date = document.createElement("time");
+    const createdAt = comment.createdAt?.toDate?.();
+    if (createdAt) {
+      date.dateTime = createdAt.toISOString();
+      date.textContent = createdAt.toLocaleString("ko-KR");
+    } else {
+      date.textContent = "방금 등록";
+    }
+    const message = document.createElement("p");
+    message.textContent = comment.message || "";
+    heading.append(author, date);
+    item.append(heading, message);
+    return item;
+  }));
+  commentsStatus.hidden = comments.length > 0;
+  commentsStatus.textContent = comments.length ? "" : "아직 등록된 댓글이 없습니다.";
+}
+
+function connectComments() {
+  unsubscribeComments = database.collection("posts").doc(postId).collection("comments")
+    .orderBy("createdAt", "desc")
+    .onSnapshot(renderComments, (error) => {
+      console.error("댓글 조회에 실패했습니다.", error);
+      commentsStatus.textContent = "댓글을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.";
+      commentsStatus.hidden = false;
+    });
+}
+
+commentForm.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!database || !postId) {
+    commentFormStatus.textContent = "댓글을 등록할 수 없습니다. 잠시 후 다시 시도해 주세요.";
+    return;
+  }
+  const formData = new FormData(commentForm);
+  const author = formData.get("author").trim();
+  const message = formData.get("message").trim();
+  if (!author || !message) {
+    commentFormStatus.textContent = "이름과 댓글을 모두 입력해 주세요.";
+    return;
+  }
+  commentSubmit.disabled = true;
+  commentFormStatus.textContent = "댓글 등록 중입니다.";
+  try {
+    await database.collection("posts").doc(postId).collection("comments").add({
+      author,
+      message,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    commentForm.reset();
+    commentFormStatus.textContent = "댓글을 등록했습니다.";
+  } catch (error) {
+    console.error("댓글 등록에 실패했습니다.", error);
+    commentFormStatus.textContent = error.code === "permission-denied"
+      ? "댓글 등록 권한이 없습니다. Firestore 규칙을 확인해 주세요."
+      : "댓글 등록에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+  } finally {
+    commentSubmit.disabled = false;
+  }
+});
 
 function connectPostPage() {
   if (!postId) {
@@ -100,6 +184,20 @@ function connectPostPage() {
   try {
     if (firebase.apps.length === 0) firebase.initializeApp(config);
     database = firebase.firestore();
+    auth = firebase.auth();
+    auth.onAuthStateChanged(async (user) => {
+      isAdmin = false;
+      if (user) {
+        try {
+          const adminSnapshot = await database.collection("admins").doc(user.uid).get();
+          if (auth.currentUser?.uid !== user.uid) return;
+          isAdmin = adminSnapshot.exists;
+        } catch (error) {
+          console.error("관리자 권한 확인에 실패했습니다.", error);
+        }
+      }
+      ownerActions.hidden = !isAdmin;
+    });
     unsubscribePost = database.collection("posts").doc(postId).onSnapshot((snapshot) => {
       renderPost(snapshot.exists ? snapshot.data() : null);
     }, (error) => {
@@ -115,5 +213,8 @@ function connectPostPage() {
   }
 }
 
-window.addEventListener("pagehide", () => unsubscribePost?.());
+window.addEventListener("pagehide", () => {
+  unsubscribePost?.();
+  unsubscribeComments?.();
+});
 connectPostPage();
