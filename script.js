@@ -132,6 +132,7 @@ function createPostCard(post) {
   title.textContent = post.title || "제목 없는 매물";
   const price = createTextElement("p", "property-price", post.price);
   const location = createTextElement("p", "property-list-location", post.location || "위치 미입력");
+  const views = createTextElement("p", "property-views", `조회 ${post.views || 0}`);
   details.append(meta, title, price, location, ...(isAdmin ? [views] : []));
   if (post.description) {
     details.append(createTextElement("p", "property-list-summary", post.description));
