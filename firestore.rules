@@ -9,7 +9,8 @@ service cloud.firestore {
 
     match /posts/{postId} {
       allow read: if true;
-      allow create, update: if isAdmin() && validPost(request.resource.data);
+      allow create: if isAdmin() && validPost(request.resource.data);
+      allow update: if (isAdmin() && validPost(request.resource.data)) || validViewIncrement();
       allow delete: if isAdmin();
 
       match /comments/{commentId} {
@@ -28,6 +29,11 @@ service cloud.firestore {
         allow delete: if isAdmin();
       }
     }
+    function validViewIncrement() {
+  return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views'])
+    && request.resource.data.views is int
+    && request.resource.data.views == (('views' in resource.data) ? resource.data.views + 1 : 1);
+    }
 
     function isAdmin() {
       return request.auth != null
@@ -45,7 +51,7 @@ service cloud.firestore {
       return data.keys().hasOnly([
           'title', 'location', 'propertyType', 'dealType', 'price', 'description',
           'area', 'rooms', 'bathrooms', 'imageUrl', 'createdAt', 'updatedAt',
-          'infoImageUrl', 'photoUrls', 'youtubeUrl', 'propertyTable', 'brokerTable'
+          'infoImageUrl', 'photoUrls', 'youtubeUrl', 'propertyTable', 'brokerTable', 'views'
         ])
         && data.keys().hasAll([
           'title', 'location', 'propertyType', 'dealType', 'price', 'description',
@@ -66,7 +72,8 @@ service cloud.firestore {
         && (!('photoUrls' in data) || (data.photoUrls is list && data.photoUrls.size() <= 20))
         && (!('youtubeUrl' in data) || (data.youtubeUrl is string && data.youtubeUrl.size() <= 500))
         && (!('propertyTable' in data) || (data.propertyTable is list && data.propertyTable.size() <= 100))
-        && (!('brokerTable' in data) || (data.brokerTable is list && data.brokerTable.size() <= 20));
+        && (!('brokerTable' in data) || (data.brokerTable is list && data.brokerTable.size() <= 20))
+        && (!('views' in data) || (data.views is int && data.views >= 0));
     }
   }
 }

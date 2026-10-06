@@ -106,7 +106,7 @@ function renderPost(post) {
   document.querySelector("#post-detail-title").textContent = post.title || "제목 없는 게시글";
   document.querySelector("#post-detail-location").textContent = post.location || "지역 미입력";
   document.querySelector("#post-detail-description").textContent = post.description || "상세 설명이 없습니다.";
-  document.querySelector("#post-detail-price").textContent = post.price || "가격 문의";
+  document.querySelector("#post-detail-price").textContent = post.price || "가격 문의";  
 
   const propertyTable = normalizePropertyTable(post.propertyTable);
   const hasPropertyTable = propertyTable.some((row) => row.some((cell) => cell.trim() !== ""));
@@ -346,6 +346,11 @@ function connectPostPage() {
       }
       connectPrivateComments();
     });
+    database.collection("posts").doc(postId).update({
+  views: firebase.firestore.FieldValue.increment(1)
+}).catch((error) => {
+  console.error("조회수 증가에 실패했습니다.", error);
+});
     unsubscribePost = database.collection("posts").doc(postId).onSnapshot((snapshot) => {
       renderPost(snapshot.exists ? snapshot.data() : null);
     }, (error) => {
