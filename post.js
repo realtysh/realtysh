@@ -107,7 +107,7 @@ function renderPost(post) {
   document.querySelector("#post-detail-location").textContent = post.location || "지역 미입력";
   document.querySelector("#post-detail-description").textContent = post.description || "상세 설명이 없습니다.";
   document.querySelector("#post-detail-price").textContent = post.price || "가격 문의";
-  document.querySelector("#post-detail-views").textContent = `조회 ${post.views || 0}`;  
+  document.querySelector("#post-detail-views").textContent = isAdmin ? `조회 ${post.views || 0}` : "";  
 
   const propertyTable = normalizePropertyTable(post.propertyTable);
   const hasPropertyTable = propertyTable.some((row) => row.some((cell) => cell.trim() !== ""));
