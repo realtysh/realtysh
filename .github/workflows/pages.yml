@@ -36,7 +36,7 @@ jobs:
           FIREBASE_MEASUREMENT_ID: ${{ vars.FIREBASE_MEASUREMENT_ID || secrets.FIREBASE_MEASUREMENT_ID }}
         run: |
           mkdir -p site
-          cp index.html post.html styles.css posts.css post.js script.js robots.txt sitemap.xml site/
+          cp index.html post.html styles.css posts.css post.js script.js robots.txt sitemap.xml naver67821871de9a89c332917067e316e832.html site/
           node <<'NODE'
           const fs = require('node:fs');
           const requiredKeys = [
