@@ -341,6 +341,8 @@ function connectPostPage() {
         }
       }
       ownerActions.hidden = !isAdmin;
+      unsubscribeComments?.();
+      unsubscribeComments = database.collection("posts").doc(postId).collection("comments").orderBy("createdAt", "desc").onSnapshot(renderComments);
       if (isAdmin) {
         unsubscribePrivateComments?.();
         unsubscribePrivateComments = null;
