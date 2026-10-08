@@ -70,6 +70,74 @@ jobs:
             ? `Firebase config incomplete; using local favorites. Missing: ${missingKeys.join(', ')}`
             : 'Firebase web config generated.');
           NODE
+                # Firestore 게시글 주소를 sitemap.xml에 자동 추가
+      - name: Generate post sitemap
+        env:
+          FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY || secrets.FIREBASE_API_KEY }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID || secrets.FIREBASE_PROJECT_ID }}
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+
+          async function main() {
+            const projectId = process.env.FIREBASE_PROJECT_ID;
+            const apiKey = process.env.FIREBASE_API_KEY;
+
+            if (!projectId || !apiKey) {
+              throw new Error('Firebase project ID or API key is missing.');
+            }
+
+            let url =
+              `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/posts?pageSize=100&key=${apiKey}`;
+
+            const postIds = [];
+
+            while (url) {
+              const response = await fetch(url);
+
+              if (!response.ok) {
+                throw new Error(`Firestore request failed: ${response.status} ${await response.text()}`);
+              }
+
+              const data = await response.json();
+
+              for (const doc of data.documents || []) {
+                postIds.push(doc.name.split('/').pop());
+              }
+
+              url = data.nextPageToken
+                ? `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/posts?pageSize=100&pageToken=${encodeURIComponent(data.nextPageToken)}&key=${apiKey}`
+                : '';
+            }
+
+            const urls = [
+              '  <url>',
+              '    <loc>https://realtysh.com/</loc>',
+              '  </url>',
+              ...postIds.flatMap((id) => [
+                '  <url>',
+                `    <loc>https://realtysh.com/post.html?id=${id}</loc>`,
+                '  </url>'
+              ])
+            ];
+
+            const xml = [
+              '<?xml version="1.0" encoding="UTF-8"?>',
+              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+              ...urls,
+              '</urlset>',
+              ''
+            ].join('\n');
+
+            fs.writeFileSync('site/sitemap.xml', xml);
+            console.log(`Sitemap generated with ${postIds.length} posts.`);
+          }
+
+          main().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:
