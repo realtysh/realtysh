@@ -350,14 +350,14 @@ function connectPostPage() {
         privateComments.hidden = true;
       }
       connectPrivateComments();
-    });
-    if (!isAdmin) {
+      if (!isAdmin) {
     database.collection("posts").doc(postId).update({
   views: firebase.firestore.FieldValue.increment(1)
 }).catch((error) => {
   console.error("조회수 증가에 실패했습니다.", error);
 });
-    }    
+      }
+});
     unsubscribePost = database.collection("posts").doc(postId).onSnapshot((snapshot) => {
       renderPost(snapshot.exists ? snapshot.data() : null);
     }, (error) => {
