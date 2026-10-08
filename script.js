@@ -687,10 +687,6 @@ postForm.addEventListener("submit", async (event) => {
   }
 });
 
-postDialog.addEventListener("click", (event) => {
-  if (event.target === postDialog) postDialog.close();
-});
-
 menuToggle.addEventListener("click", () => {
   const isOpen = menuToggle.getAttribute("aria-expanded") === "true";
   menuToggle.setAttribute("aria-expanded", String(!isOpen));
