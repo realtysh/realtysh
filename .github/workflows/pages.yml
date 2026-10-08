@@ -116,7 +116,7 @@ jobs:
               '  </url>',
               ...postIds.flatMap((id) => [
                 '  <url>',
-                `    <loc>https://realtysh.com/post.html?id=${id}</loc>`,
+                `    <loc>https://realtysh.com/posts/${id}.html</loc>`,
                 '  </url>'
               ])
             ];
