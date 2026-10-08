@@ -138,6 +138,123 @@ jobs:
             process.exit(1);
           });
           NODE
+            # 검색엔진용 정적 게시글 페이지 자동 생성
+      - name: Generate static post pages
+        env:
+          FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY || secrets.FIREBASE_API_KEY }}
+          FIREBASE_PROJECT_ID: ${{ vars.FIREBASE_PROJECT_ID || secrets.FIREBASE_PROJECT_ID }}
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+
+          function escapeHtml(value) {
+            return String(value ?? '')
+              .replaceAll('&', '&amp;')
+              .replaceAll('<', '&lt;')
+              .replaceAll('>', '&gt;')
+              .replaceAll('"', '&quot;')
+              .replaceAll("'", '&#39;');
+          }
+
+          function firestoreValue(value = {}) {
+            if ('stringValue' in value) return value.stringValue;
+            if ('integerValue' in value) return Number(value.integerValue);
+            if ('doubleValue' in value) return Number(value.doubleValue);
+            if ('booleanValue' in value) return value.booleanValue;
+            if ('timestampValue' in value) return value.timestampValue;
+            if ('nullValue' in value) return null;
+            if ('arrayValue' in value) {
+              return (value.arrayValue.values || []).map(firestoreValue);
+            }
+            if ('mapValue' in value) {
+              return firestoreFields(value.mapValue.fields || {});
+            }
+            return '';
+          }
+
+          function firestoreFields(fields = {}) {
+            return Object.fromEntries(
+              Object.entries(fields).map(([key, value]) => [key, firestoreValue(value)])
+            );
+          }
+
+          async function main() {
+            const projectId = process.env.FIREBASE_PROJECT_ID;
+            const apiKey = process.env.FIREBASE_API_KEY;
+
+            if (!projectId || !apiKey) {
+              throw new Error('Firebase project ID or API key is missing.');
+            }
+
+            fs.mkdirSync('site/posts', { recursive: true });
+
+            let url =
+              `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/posts?pageSize=100&key=${apiKey}`;
+
+            let count = 0;
+
+            while (url) {
+              const response = await fetch(url);
+
+              if (!response.ok) {
+                throw new Error(`Firestore request failed: ${response.status} ${await response.text()}`);
+              }
+
+              const data = await response.json();
+
+              for (const doc of data.documents || []) {
+                const id = doc.name.split('/').pop();
+                const post = firestoreFields(doc.fields || {});
+
+                const title = post.title || '시흥 부동산 매물';
+                const location = post.location || '시흥시';
+                const price = post.price || '';
+                const description =
+                  post.description || '현진부동산 매물 상세정보입니다.';
+
+                const staticUrl = `https://realtysh.com/posts/${id}.html`;
+                const originalUrl =
+                  `https://realtysh.com/post.html?id=${encodeURIComponent(id)}`;
+
+                const html = `<!doctype html>
+          <html lang="ko">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>${escapeHtml(title)} | 현진부동산</title>
+            <meta name="description" content="${escapeHtml(`${location} ${title} ${price}. ${description}`)}">
+            <link rel="canonical" href="${staticUrl}">
+          </head>
+          <body>
+            <main>
+              <article>
+                <h1>${escapeHtml(title)}</h1>
+                <p>${escapeHtml(location)}</p>
+                <p>${escapeHtml(price)}</p>
+                <div>${escapeHtml(description).replaceAll('\n', '<br>')}</div>
+                <p><a href="${originalUrl}">사진·상세정보·문의 및 댓글 보기</a></p>
+              </article>
+            </main>
+          </body>
+          </html>`;
+
+                fs.writeFileSync(`site/posts/${id}.html`, html);
+                count += 1;
+              }
+
+              url = data.nextPageToken
+                ? `https://firestore.googleapis.com/v1/projects/${projectId}/databases/(default)/documents/posts?pageSize=100&pageToken=${encodeURIComponent(data.nextPageToken)}&key=${apiKey}`
+                : '';
+            }
+
+            console.log(`Generated ${count} static post pages.`);
+          }
+
+          main().catch((error) => {
+            console.error(error);
+            process.exit(1);
+          });
+          NODE
       - name: Upload site artifact
         uses: actions/upload-pages-artifact@v3
         with:
