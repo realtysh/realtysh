@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#f7f8f4">
-    <me<meta name="description" content="시흥시 부동산 현진부동산입니다. 신천동·신천역 주변 상가, 주택, 아파트, 토지와 방산동 공장·창고 등 시흥 부동산 매물 정보를 제공합니다.">
+    <meta name="description" content="시흥시 부동산 현진부동산입니다. 신천동·신천역 주변 상가, 주택, 아파트, 토지와 방산동 공장·창고 등 시흥 부동산 매물 정보를 제공합니다.">
     <title>시흥시 부동산 | 신천동·신천역 부동산 | 현진부동산</title>
     <meta name="naver-site-verification" content="8001c5542c7db33f8fd3921de82ac7316cfe727a" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,7 +29,10 @@
       </button>
       <nav class="main-nav" id="main-nav" aria-label="주요 메뉴">
         <a href="#homes">매물 찾기</a>
+        <a href="#inquiry">매물 접수</a>
+        <button class="nav-text-button" id="open-my-inquiries-nav" type="button">내 접수 확인·수정</button>
         <a href="#contact">상담 문의</a>
+        <button class="nav-text-button admin-only" id="inquiry-manage" type="button" hidden>접수 관리</button>
         <button class="nav-contact" id="admin-access" type="button">관리자 로그인</button>
       </nav>
     </header>
@@ -40,37 +43,38 @@
         <div class="hero-copy">
           <p class="eyebrow hero-eyebrow"><span></span> HYUNJIN REAL ESTATE</p>
           <h1 id="hero-title">현진부동산</h1>
-          <p class="hero-description">원하시는 매물 종류를 선택해 보세요.</p>
+          <p class="hero-description">좋은 집과 좋은 인연, 현진이 함께합니다.</p>
           <div class="category-buttons" role="group" aria-label="매물 종류 선택">
+            <button class="category-button" type="button" data-filter="apartment" aria-pressed="false">
+              <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=88" alt="" loading="eager">
+              <span class="category-label">아파트 · 주택<small>아파트 / 빌라 / 주택 / 다가구</small></span><span class="category-arrow" aria-hidden="true">›</span>
+            </button>
             <button class="category-button" type="button" data-filter="commercial" aria-pressed="false">
-              <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=900&q=85" alt="" loading="eager">
-              <span class="category-label">상가</span><span class="category-arrow" aria-hidden="true">↗</span>
+              <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=900&q=88" alt="" loading="eager">
+              <span class="category-label">상가<small>상가 / 사무실 / 근린상가</small></span><span class="category-arrow" aria-hidden="true">›</span>
             </button>
             <button class="category-button" type="button" data-filter="warehouse" aria-pressed="false">
-              <img src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=900&q=85" alt="" loading="eager">
-              <span class="category-label">공장/창고</span><span class="category-arrow" aria-hidden="true">↗</span>
-            </button>
-            <button class="category-button" type="button" data-filter="apartment" aria-pressed="false">
-              <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=85" alt="" loading="eager">
-              <span class="category-label">아파트/주택</span><span class="category-arrow" aria-hidden="true">↗</span>
+              <img src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=900&q=88" alt="" loading="eager">
+              <span class="category-label">공장 · 창고<small>공장 / 창고 / 물류센터 / 제조업</small></span><span class="category-arrow" aria-hidden="true">›</span>
             </button>
             <button class="category-button" type="button" data-filter="presale" aria-pressed="false">
-              <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=85" alt="" loading="eager">
-              <span class="category-label">분양권</span><span class="category-arrow" aria-hidden="true">↗</span>
+              <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=88" alt="" loading="eager">
+              <span class="category-label">분양권<small>아파트 / 오피스텔 / 상가 등</small></span><span class="category-arrow" aria-hidden="true">›</span>
+            </button>
+            <button class="category-button" type="button" data-filter="land" aria-pressed="false">
+              <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=88" alt="" loading="eager">
+              <span class="category-label">토지<small>주거용 / 상업용 / 개발부지</small></span><span class="category-arrow" aria-hidden="true">›</span>
             </button>
           </div>
+          <button class="listing-inquiry-cta" id="open-inquiry" type="button">
+            <span class="listing-inquiry-icon" aria-hidden="true">▤</span>
+            <span><strong>매물 접수하기</strong><small>아파트 · 상가 · 토지 · 공장 · 분양권 등</small></span>
+            <span class="listing-inquiry-arrow" aria-hidden="true">›</span>
+          </button>
         </div>
       </section>
 
-      <section class="office-showcase" aria-label="현진부동산에서 만나는 새로운 공간">
-        <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=2200&q=88" alt="따뜻한 자연광이 들어오는 현대적인 부동산 공간" loading="lazy">
-        <div class="office-showcase-shade"></div>
-        <div class="office-showcase-copy">
-          <p class="eyebrow">A PLACE TO CALL YOURS</p>
-          <h2>좋은 공간을 찾는 일,<br>현진부동산이 함께합니다.</h2>
-          <a href="#homes">매물 둘러보기 <span aria-hidden="true">↘</span></a>
-        </div>
-      </section>
+
       </div>
 
       <div id="listing-view" hidden>
@@ -107,7 +111,7 @@
             <h2 id="homes-title">지금 눈여겨볼 공간</h2>
             <p class="public-board-note">매물 상세 게시글에서 자세한 정보를 확인하고 댓글을 남길 수 있습니다.</p>
           </div>
-          <button class="post-create-inline admin-only" id="post-create" type="button" hidden><span aria-hidden="true">+</span> 매물 등록</button>
+          <div class="admin-actions"><button class="post-create-inline admin-only" id="post-create" type="button" hidden><span aria-hidden="true">+</span> 매물 등록</button></div>
         </div>
         <div class="listing-toolbar">
           <div class="listing-status">
@@ -167,7 +171,7 @@
       <form id="post-form">
         <div class="post-form-grid">
           <label class="post-field post-field-wide"><span>매물 제목</span><input name="title" required maxlength="80" placeholder="예: 시흥 신천동 역세권 상가"></label>
-          <label class="post-field"><span>매물 종류</span><select name="propertyType" required><option value="commercial">상가</option><option value="warehouse">공장·창고</option><option value="apartment">아파트</option><option value="presale">분양권</option><option value="other">기타</option><option value="house">단독주택 (기존)</option></select></label>
+          <label class="post-field"><span>매물 종류</span><select name="propertyType" required><option value="commercial">상가</option><option value="warehouse">공장·창고</option><option value="apartment">아파트</option><option value="presale">분양권</option><option value="land">토지</option><option value="other">기타</option><option value="house">단독주택 (기존)</option></select></label>
           <label class="post-field"><span>거래 유형</span><select name="dealType" required><option value="sale">매매</option><option value="lease">전세</option><option value="monthly">월세</option></select></label>
           <label class="post-field"><span>가격</span><input name="price" required maxlength="40" placeholder="예: 매매 3억 5,000만원"></label>
           <label class="post-field"><span>간단한 위치</span><input name="location" required maxlength="80" placeholder="예: 시흥시 신천동"></label>
@@ -201,6 +205,40 @@
         </div>
       </form>
     </dialog>
+    <dialog class="post-dialog inquiry-dialog" id="inquiry-dialog" aria-labelledby="inquiry-title">
+      <div class="post-dialog-head"><div><p class="eyebrow">HYUNJIN REAL ESTATE</p><h2 id="inquiry-title">매물 접수하기</h2></div><button class="dialog-close" id="close-inquiry" type="button" aria-label="닫기">×</button></div>
+      <form id="inquiry-form">
+        <div class="post-form-grid">
+          <label class="post-field"><span>성명</span><input name="name" required maxlength="30" autocomplete="name"></label>
+          <label class="post-field"><span>전화번호</span><input name="phone" required maxlength="20" inputmode="tel" autocomplete="tel" placeholder="010-0000-0000"></label>
+          <label class="post-field"><span>확인 비밀번호 (숫자 4자리)</span><input name="pin" required minlength="4" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" autocomplete="new-password" placeholder="예: 2580"></label>
+          <label class="post-field"><span>매물 종류</span><select name="propertyType" required><option value="apartment">아파트·주택</option><option value="commercial">상가</option><option value="warehouse">공장·창고</option><option value="presale">분양권</option><option value="land">토지</option><option value="other">기타</option></select></label>
+          <label class="post-field"><span>면적</span><input name="area" maxlength="40" placeholder="예: 전용 84㎡ / 25평"></label>
+          <label class="post-field post-field-wide"><span>매물 주소</span><input name="address" required maxlength="120" placeholder="예: 시흥시 신천동 ○○아파트"></label>
+          <label class="post-field"><span>희망 가격</span><input name="price" maxlength="50" placeholder="예: 매매 2억 1,000만원"></label>
+          <label class="post-field post-field-wide"><span>기타 사항</span><textarea name="notes" maxlength="1500" rows="5" placeholder="층수, 입주 가능일, 매물 특징 등을 적어 주세요."></textarea></label>
+          <label class="privacy-consent post-field-wide"><input name="privacy" type="checkbox" required><span>매물 상담을 위한 개인정보 수집·이용에 동의합니다. 입력 정보는 상담 목적으로만 사용됩니다.</span></label>
+        </div>
+        <p class="post-form-status" id="inquiry-status" role="status" aria-live="polite"></p>
+        <div class="customer-inquiry-tools"><button class="customer-check-button" id="open-my-inquiries" type="button">내 접수 확인·수정</button><small>이 기기에서 접수한 매물을 4자리 비밀번호로 확인할 수 있습니다.</small></div>
+        <div class="post-form-actions"><button class="form-cancel" id="cancel-inquiry" type="button">취소</button><button class="form-submit" id="submit-inquiry" type="submit">접수하기</button></div>
+      </form>
+    </dialog>
+
+
+    <dialog class="post-dialog inquiry-list-dialog" id="my-inquiry-dialog" aria-labelledby="my-inquiry-title">
+      <div class="post-dialog-head"><div><p class="eyebrow">MY LISTING REQUEST</p><h2 id="my-inquiry-title">내 접수 확인·수정</h2></div><button class="dialog-close" id="close-my-inquiry" type="button" aria-label="닫기">×</button></div>
+      <div class="inquiry-list-wrap">
+        <form id="my-inquiry-unlock" class="my-inquiry-unlock"><label class="post-field"><span>접수할 때 정한 4자리 비밀번호</span><input name="pin" required minlength="4" maxlength="4" inputmode="numeric" pattern="[0-9]{4}" placeholder="4자리"></label><button class="form-submit" type="submit">확인</button></form>
+        <p class="post-form-status" id="my-inquiry-status"></p><div id="my-inquiry-list" class="inquiry-list"></div>
+      </div>
+    </dialog>
+
+    <dialog class="post-dialog inquiry-list-dialog" id="inquiry-list-dialog" aria-labelledby="inquiry-list-title">
+      <div class="post-dialog-head"><div><p class="eyebrow">PRIVATE · ADMIN ONLY</p><h2 id="inquiry-list-title">고객 매물 접수</h2></div><button class="dialog-close" id="close-inquiry-list" type="button" aria-label="닫기">×</button></div>
+      <div class="inquiry-list-wrap"><div class="inquiry-admin-toolbar"><button class="customer-check-button is-active" id="active-inquiries-button" type="button">진행중 접수</button><button class="customer-check-button" id="completed-inquiries-button" type="button">완료 내역 보기</button></div><p class="post-form-status" id="inquiry-list-status"></p><div id="inquiry-list" class="inquiry-list"></div></div>
+    </dialog>
+
     <dialog class="admin-dialog" id="admin-dialog" aria-labelledby="admin-form-title">
       <div class="post-dialog-head">
         <div>

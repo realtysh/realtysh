@@ -38,6 +38,7 @@ const postTypes = {
   commercial: "상가",
   warehouse: "공장/창고",
   presale: "분양권",
+  land: "토지",
   other: "기타"
 };
 const dealTypes = {
@@ -207,6 +208,7 @@ function renderPosts() {
 function updateAdminControls() {
   adminAccess.textContent = isAdmin ? "관리자 로그아웃" : "관리자 로그인";
   postCreateButton.hidden = !isAdmin;
+  if (inquiryManageButton) inquiryManageButton.hidden = !isAdmin;
   renderPosts();
 }
 
@@ -405,10 +407,6 @@ adminForm.addEventListener("submit", async (event) => {
   } finally {
     submitButton.disabled = false;
   }
-});
-
-adminDialog.addEventListener("click", (event) => {
-  if (event.target === adminDialog) adminDialog.close();
 });
 
 document.querySelector("#close-post-form").addEventListener("click", () => postDialog.close());
@@ -725,5 +723,160 @@ async function connectFirebase() {
     setConnectionError(error);
   }
 }
+
+connectFirebase();
+// Customer listing intake: customer-owned records + admin management
+const inquiryDialog = document.querySelector("#inquiry-dialog");
+const inquiryForm = document.querySelector("#inquiry-form");
+const inquiryStatus = document.querySelector("#inquiry-status");
+const inquiryManageButton = document.querySelector("#inquiry-manage");
+const inquiryListDialog = document.querySelector("#inquiry-list-dialog");
+const inquiryList = document.querySelector("#inquiry-list");
+const inquiryListStatus = document.querySelector("#inquiry-list-status");
+const myInquiryDialog = document.querySelector("#my-inquiry-dialog");
+const myInquiryList = document.querySelector("#my-inquiry-list");
+const myInquiryStatus = document.querySelector("#my-inquiry-status");
+const myInquiryUnlock = document.querySelector("#my-inquiry-unlock");
+let unlockedPinHash = "";
+
+async function sha256(value) {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return Array.from(new Uint8Array(digest)).map((b) => b.toString(16).padStart(2, "0")).join("");
+}
+async function ensureCustomerAuth() {
+  if (!auth) throw new Error("인증 연결 전입니다.");
+  if (auth.currentUser) return auth.currentUser;
+  const result = await auth.signInAnonymously();
+  return result.user;
+}
+function openInquiryForm() {
+  inquiryForm.reset(); inquiryStatus.textContent = ""; inquiryDialog.showModal();
+}
+document.querySelector("#open-inquiry")?.addEventListener("click", openInquiryForm);
+document.querySelector('a[href="#inquiry"]')?.addEventListener("click", (event) => {
+  event.preventDefault(); mainNav.classList.remove("is-open"); menuToggle.setAttribute("aria-expanded", "false"); openInquiryForm();
+});
+document.querySelector("#close-inquiry")?.addEventListener("click", () => inquiryDialog.close());
+document.querySelector("#cancel-inquiry")?.addEventListener("click", () => inquiryDialog.close());
+document.querySelector("#close-inquiry-list")?.addEventListener("click", () => inquiryListDialog.close());
+document.querySelector("#close-my-inquiry")?.addEventListener("click", () => myInquiryDialog.close());
+document.querySelector("#open-my-inquiries")?.addEventListener("click", () => {
+  inquiryDialog.close(); myInquiryList.replaceChildren(); myInquiryStatus.textContent = ""; myInquiryUnlock.reset(); myInquiryDialog.showModal();
+});
+document.querySelector("#open-my-inquiries-nav")?.addEventListener("click", () => {
+  mainNav.classList.remove("is-open");
+  menuToggle.setAttribute("aria-expanded", "false");
+  myInquiryList.replaceChildren();
+  myInquiryStatus.textContent = "";
+  myInquiryUnlock.reset();
+  myInquiryDialog.showModal();
+});
+
+inquiryForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  if (!database) { inquiryStatus.textContent = "잠시 후 다시 시도해 주세요."; return; }
+  const button = document.querySelector("#submit-inquiry"); const fd = new FormData(inquiryForm);
+  const pin = String(fd.get("pin") || "");
+  if (!/^\d{4}$/.test(pin)) { inquiryStatus.textContent = "확인 비밀번호는 숫자 4자리로 입력해 주세요."; return; }
+  button.disabled = true; inquiryStatus.textContent = "접수 중입니다.";
+  try {
+    const user = await ensureCustomerAuth(); const pinHash = await sha256(pin);
+    await database.collection("listingInquiries").add({
+      ownerUid: user.uid, pinHash, name: fd.get("name").trim(), phone: fd.get("phone").trim(), propertyType: fd.get("propertyType"),
+      address: fd.get("address").trim(), area: fd.get("area").trim(), price: fd.get("price").trim(), notes: fd.get("notes").trim(),
+      status: "new", createdAt: firebase.firestore.FieldValue.serverTimestamp(), updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    inquiryForm.reset(); inquiryStatus.textContent = "접수되었습니다. 이 기기에서 4자리 비밀번호로 확인·수정할 수 있습니다.";
+    setTimeout(() => inquiryDialog.open && inquiryDialog.close(), 1900);
+  } catch (error) {
+    console.error("매물 접수 실패", error);
+    inquiryStatus.textContent = error?.code === "auth/operation-not-allowed" ? "Firebase에서 익명 로그인을 먼저 활성화해야 합니다." : "접수하지 못했습니다. 잠시 후 다시 시도해 주세요.";
+  } finally { button.disabled = false; }
+});
+
+const statusLabels = { new:"신규", consulting:"상담중", listed:"매물등록", hold:"보류", completed:"완료" };
+const activeInquiriesButton = document.querySelector("#active-inquiries-button");
+const completedInquiriesButton = document.querySelector("#completed-inquiries-button");
+let inquiryListMode = "active";
+function buildInquiryRows(data) {
+  const grid = document.createElement("div"); grid.className = "inquiry-item-grid";
+  [["종류",postTypes[data.propertyType]||data.propertyType],["면적",data.area],["가격",data.price],["주소",data.address,"wide"],["기타",data.notes,"wide"],["상태",statusLabels[data.status]||"신규"]].forEach(([label,value,cls])=>{
+    const p=document.createElement("p"); if(cls)p.className=cls; const b=document.createElement("strong"); b.textContent=`${label}: `; p.append(b,document.createTextNode(value||"-")); grid.append(p);
+  }); return grid;
+}
+async function loadInquiryList(mode = "active") {
+  if (!database || !isAdmin) return;
+  inquiryListMode = mode;
+  activeInquiriesButton?.classList.toggle("is-active", mode === "active");
+  completedInquiriesButton?.classList.toggle("is-active", mode === "completed");
+  inquiryList.replaceChildren();
+  inquiryListStatus.textContent = mode === "completed" ? "완료 내역을 불러오는 중입니다." : "진행중 접수를 불러오는 중입니다.";
+  try {
+    const snapshot = await database.collection("listingInquiries").orderBy("createdAt", "desc").limit(200).get();
+    const docs = snapshot.docs.filter((doc) => mode === "completed" ? doc.data().status === "completed" : doc.data().status !== "completed");
+    inquiryListStatus.textContent = docs.length ? (mode === "completed" ? `완료 ${docs.length}건 · 필요할 때만 완전 삭제하세요.` : `진행중 ${docs.length}건`) : (mode === "completed" ? "완료 처리된 접수가 없습니다." : "현재 진행중인 접수가 없습니다.");
+    docs.forEach((doc) => {
+      const data=doc.data(), item=document.createElement("article"); item.className="inquiry-item";
+      const head=document.createElement("div"); head.className="inquiry-item-head"; const title=document.createElement("h3"); title.textContent=`${data.name||""} · ${data.phone||""}`;
+      const time=document.createElement("time"); time.textContent=data.createdAt?.toDate?data.createdAt.toDate().toLocaleString("ko-KR"):"접수 직후"; head.append(title,time);
+      const grid=buildInquiryRows(data);
+      const actions=document.createElement("div"); actions.className="inquiry-admin-actions";
+      if (mode === "active") {
+        const select=document.createElement("select"); select.className="inquiry-status-select";
+        Object.entries(statusLabels).forEach(([value,label])=>{const o=document.createElement("option");o.value=value;o.textContent=label;o.selected=(data.status||"new")===value;select.append(o)});
+        select.addEventListener("change", async()=>{
+          const next=select.value;
+          if(next === "completed" && !confirm("이 접수를 완료 처리할까요? 완료하면 진행중 목록에서 사라지고 ‘완료 내역 보기’에 보관됩니다.")){select.value=data.status||"new";return;}
+          select.disabled=true;
+          try{await doc.ref.update({status:next,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}); await loadInquiryList("active");}
+          catch(e){console.error(e);alert("상태를 변경하지 못했습니다.");select.value=data.status||"new";}
+          finally{select.disabled=false;}
+        });
+        actions.append(select);
+      } else {
+        const restore=document.createElement("button"); restore.type="button"; restore.className="customer-check-button"; restore.textContent="진행중으로 복원";
+        restore.addEventListener("click", async()=>{try{await doc.ref.update({status:"consulting",updatedAt:firebase.firestore.FieldValue.serverTimestamp()});await loadInquiryList("completed");}catch(e){console.error(e);alert("복원하지 못했습니다.");}});
+        const del=document.createElement("button"); del.type="button"; del.className="inquiry-delete-button"; del.textContent="완전 삭제";
+        del.addEventListener("click", async()=>{if(!confirm("정말 완전히 삭제할까요? 삭제한 접수는 복구할 수 없습니다."))return;try{await doc.ref.delete();await loadInquiryList("completed");}catch(e){console.error(e);alert("삭제하지 못했습니다.");}});
+        actions.append(restore,del);
+      }
+      item.append(head,grid,actions); inquiryList.append(item);
+    });
+  } catch (error) { console.error(error); inquiryListStatus.textContent = "접수 내역을 불러오지 못했습니다."; }
+}
+async function openInquiryList() {
+  if (!database || !isAdmin) return;
+  inquiryListDialog.showModal();
+  await loadInquiryList("active");
+}
+
+inquiryManageButton?.addEventListener("click", openInquiryList);
+activeInquiriesButton?.addEventListener("click", () => loadInquiryList("active"));
+completedInquiriesButton?.addEventListener("click", () => loadInquiryList("completed"));
+
+myInquiryUnlock?.addEventListener("submit", async (event) => {
+  event.preventDefault(); myInquiryList.replaceChildren(); myInquiryStatus.textContent="확인 중입니다.";
+  const pin=String(new FormData(myInquiryUnlock).get("pin")||""); if(!/^\d{4}$/.test(pin)){myInquiryStatus.textContent="숫자 4자리를 입력해 주세요.";return;}
+  try {
+    const user=await ensureCustomerAuth(); unlockedPinHash=await sha256(pin);
+    const snapshot=await database.collection("listingInquiries").where("ownerUid","==",user.uid).get();
+    const docs=snapshot.docs.filter((d)=>d.data().pinHash===unlockedPinHash).sort((a,b)=>(b.data().createdAt?.seconds||0)-(a.data().createdAt?.seconds||0));
+    myInquiryStatus.textContent=docs.length?`내 접수 ${docs.length}건` : "일치하는 접수 내역이 없습니다. 접수한 기기와 비밀번호를 확인해 주세요.";
+    docs.forEach(renderMyInquiry);
+  } catch(error){console.error(error);myInquiryStatus.textContent=error?.code==="auth/operation-not-allowed"?"Firebase에서 익명 로그인을 먼저 활성화해야 합니다.":"접수 내역을 확인하지 못했습니다.";}
+});
+function renderMyInquiry(doc) {
+  const data=doc.data(), item=document.createElement("article"); item.className="inquiry-item";
+  const head=document.createElement("div"); head.className="inquiry-item-head"; const title=document.createElement("h3"); title.textContent=`${postTypes[data.propertyType]||"매물"} · ${statusLabels[data.status]||"신규"}`;
+  const time=document.createElement("time");time.textContent=data.createdAt?.toDate?data.createdAt.toDate().toLocaleString("ko-KR"):"접수 직후";head.append(title,time);
+  const form=document.createElement("form"); form.className="inquiry-edit-grid";
+  const fields=[["name","성명",data.name],["phone","전화번호",data.phone],["area","면적",data.area],["price","희망 가격",data.price],["address","매물 주소",data.address,"wide"],["notes","기타 사항",data.notes,"wide","textarea"]];
+  fields.forEach(([name,label,value,cls,type])=>{const wrap=document.createElement("label");wrap.className=`post-field ${cls||""}`;const span=document.createElement("span");span.textContent=label;const input=document.createElement(type==="textarea"?"textarea":"input");input.name=name;input.value=value||"";if(type==="textarea")input.rows=4;wrap.append(span,input);form.append(wrap);});
+  const actions=document.createElement("div");actions.className="inquiry-edit-actions wide";const save=document.createElement("button");save.className="form-submit";save.type="submit";save.textContent="수정 저장";actions.append(save);form.append(actions);
+  form.addEventListener("submit",async(e)=>{e.preventDefault();save.disabled=true;const fd=new FormData(form);try{await doc.ref.update({name:fd.get("name").trim(),phone:fd.get("phone").trim(),area:fd.get("area").trim(),price:fd.get("price").trim(),address:fd.get("address").trim(),notes:fd.get("notes").trim(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});save.textContent="저장 완료";setTimeout(()=>save.textContent="수정 저장",1200);}catch(err){console.error(err);alert("수정하지 못했습니다.");}finally{save.disabled=false;}});
+  item.append(head,form);myInquiryList.append(item);
+}
+
 
 connectFirebase();

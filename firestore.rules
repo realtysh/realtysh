@@ -29,6 +29,16 @@ service cloud.firestore {
         allow delete: if isAdmin();
       }
     }
+
+    match /listingInquiries/{inquiryId} {
+      allow create: if request.auth != null
+        && request.resource.data.ownerUid == request.auth.uid
+        && validInquiry(request.resource.data);
+      allow get, list: if isAdmin() || (request.auth != null && resource.data.ownerUid == request.auth.uid);
+      allow update: if isAdmin() || validCustomerInquiryUpdate();
+      allow delete: if isAdmin();
+    }
+
     function validViewIncrement() {
   return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['views'])
     && request.resource.data.views is int
@@ -47,6 +57,41 @@ service cloud.firestore {
         && data.createdAt == request.time;
     }
 
+
+    function validInquiry(data) {
+      return data.keys().hasOnly(['ownerUid', 'pinHash', 'name', 'phone', 'propertyType', 'address', 'area', 'price', 'notes', 'status', 'createdAt', 'updatedAt'])
+        && data.keys().hasAll(['ownerUid', 'pinHash', 'name', 'phone', 'propertyType', 'address', 'area', 'price', 'notes', 'status', 'createdAt', 'updatedAt'])
+        && data.ownerUid is string && data.ownerUid.size() > 0
+        && data.pinHash is string && data.pinHash.size() == 64
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 30
+        && data.phone is string && data.phone.size() >= 8 && data.phone.size() <= 20
+        && data.propertyType in ['apartment', 'commercial', 'warehouse', 'presale', 'land', 'other']
+        && data.address is string && data.address.size() > 0 && data.address.size() <= 120
+        && data.area is string && data.area.size() <= 40
+        && data.price is string && data.price.size() <= 50
+        && data.notes is string && data.notes.size() <= 1500
+        && data.status in ['new', 'consulting', 'listed', 'hold', 'completed']
+        && data.createdAt == request.time && data.updatedAt == request.time;
+    }
+
+    function validCustomerInquiryUpdate() {
+      return request.auth != null
+        && resource.data.ownerUid == request.auth.uid
+        && request.resource.data.ownerUid == resource.data.ownerUid
+        && request.resource.data.pinHash == resource.data.pinHash
+        && request.resource.data.propertyType == resource.data.propertyType
+        && request.resource.data.status == resource.data.status
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone', 'address', 'area', 'price', 'notes', 'updatedAt'])
+        && request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 30
+        && request.resource.data.phone is string && request.resource.data.phone.size() >= 8 && request.resource.data.phone.size() <= 20
+        && request.resource.data.address is string && request.resource.data.address.size() > 0 && request.resource.data.address.size() <= 120
+        && request.resource.data.area is string && request.resource.data.area.size() <= 40
+        && request.resource.data.price is string && request.resource.data.price.size() <= 50
+        && request.resource.data.notes is string && request.resource.data.notes.size() <= 1500
+        && request.resource.data.updatedAt == request.time;
+    }
+
     function validPost(data) {
       return data.keys().hasOnly([
           'title', 'location', 'propertyType', 'dealType', 'price', 'description',
@@ -59,7 +104,7 @@ service cloud.firestore {
         ])
         && data.title is string && data.title.size() > 0 && data.title.size() <= 80
         && data.location is string && data.location.size() > 0 && data.location.size() <= 80
-        && data.propertyType in ['apartment', 'house', 'commercial', 'warehouse', 'presale', 'other']
+        && data.propertyType in ['apartment', 'house', 'commercial', 'warehouse', 'presale', 'land', 'other']
         && data.dealType in ['sale', 'lease', 'monthly']
         && data.price is string && data.price.size() > 0 && data.price.size() <= 40
         && data.description is string && data.description.size() > 0 && data.description.size() <= 10000
