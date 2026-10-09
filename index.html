@@ -174,7 +174,56 @@
           <label class="post-field"><span>매물 종류</span><select name="propertyType" required><option value="commercial">상가</option><option value="warehouse">공장·창고</option><option value="apartment">아파트</option><option value="presale">분양권</option><option value="land">토지</option><option value="other">기타</option><option value="house">단독주택 (기존)</option></select></label>
           <label class="post-field"><span>거래 유형</span><select name="dealType" required><option value="sale">매매</option><option value="lease">전세</option><option value="monthly">월세</option></select></label>
           <label class="post-field"><span>가격</span><input name="price" required maxlength="40" placeholder="예: 매매 3억 5,000만원"></label>
-          <label class="post-field"><span>간단한 위치</span><input name="location" required maxlength="80" placeholder="예: 시흥시 신천동"></label>
+          <label class="post-field"><span>소재지 (광고 표시용)</span><input name="location" required maxlength="80" placeholder="건축물대장/토지대장 기준 소재지"></label>
+          <section class="post-field post-field-wide legal-ad-editor" id="legal-ad-editor" aria-labelledby="legal-ad-label">
+            <h3 id="legal-ad-label">공인중개사법 표시·광고 필수사항 점검</h3>
+            <p class="legal-ad-help">매물 종류에 따라 필요한 항목을 입력해야 게시할 수 있습니다. 건축물대장·토지대장 등 확인자료를 기준으로 정확하게 입력해 주세요.</p>
+            <p class="legal-ad-type-note" id="legal-ad-type-note"></p>
+            <div class="post-form-grid legal-common-fields">
+              <label class="post-field"><span>면적(㎡) *</span><input name="legalArea" maxlength="60" placeholder="예: 공급 103.1㎡ / 전용 75.9㎡"></label>
+
+              <label class="post-field legal-residential"><span>건축물 용도 *</span><input name="buildingUse" maxlength="60" placeholder="예: 공동주택(아파트), 단독주택"></label>
+              <label class="post-field legal-residential"><span>총 층수 *</span><input name="totalFloors" maxlength="20" placeholder="건축물대장 기준"></label>
+              <label class="post-field legal-residential"><span>해당 층 *</span><input name="currentFloor" maxlength="20" placeholder="예: 10층"></label>
+              <label class="post-field legal-residential"><span>사용승인일 등 *</span><input name="approvalDate" maxlength="40" placeholder="예: 2020-03-15"></label>
+              <label class="post-field legal-residential"><span>방 수 *</span><input name="roomCount" maxlength="20" placeholder="예: 3개"></label>
+              <label class="post-field legal-residential"><span>욕실 수 *</span><input name="bathroomCount" maxlength="20" placeholder="예: 2개"></label>
+              <label class="post-field legal-residential"><span>입주 가능일 *</span><input name="moveInDate" maxlength="50" placeholder="세부 날짜 / 즉시입주"></label>
+              <label class="post-field legal-residential"><span>주차대수 *</span><input name="parking" maxlength="60" placeholder="총 주차대수 등 기준에 맞게"></label>
+              <label class="post-field legal-residential"><span>관리비 금액 *</span><input name="managementFee" maxlength="80" placeholder="예: 월 평균 20만원 / 정액 20만원"></label>
+              <label class="post-field legal-residential"><span>관리비 포함·세부내역</span><input name="managementFeeDetails" maxlength="180" placeholder="예: 일반관리비·수도료 포함 / 정액 10만원 이상이면 확인 가능한 비목별 금액"></label>
+              <label class="post-field legal-residential"><span>방향 *</span><select name="direction"><option value="">선택</option><option>동향</option><option>서향</option><option>남향</option><option>북향</option><option>북동향</option><option>남동향</option><option>남서향</option><option>북서향</option></select></label>
+              <label class="post-field legal-residential"><span>방향 기준 *</span><select name="directionBasis"><option value="">선택</option><option>거실 기준</option><option>안방 기준</option></select></label>
+
+              <label class="post-field legal-nonres"><span>건축물 용도 *</span><input name="nonresBuildingUse" maxlength="60" placeholder="예: 제2종근린생활시설 / 공장 / 창고시설"></label>
+              <label class="post-field legal-nonres"><span>총 층수 *</span><input name="nonresTotalFloors" maxlength="20" placeholder="건축물대장 기준"></label>
+              <label class="post-field legal-nonres"><span>해당 층 *</span><input name="nonresCurrentFloor" maxlength="20" placeholder="예: 1층"></label>
+              <label class="post-field legal-nonres"><span>사용승인일 등 *</span><input name="nonresApprovalDate" maxlength="40" placeholder="건축물대장 기준"></label>
+              <label class="post-field legal-nonres"><span>방 수 *</span><input name="nonresRoomCount" maxlength="20" placeholder="없으면 0개"></label>
+              <label class="post-field legal-nonres"><span>욕실 수 *</span><input name="nonresBathroomCount" maxlength="20" placeholder="없으면 0개"></label>
+              <label class="post-field legal-nonres"><span>입주 가능일 *</span><input name="nonresMoveInDate" maxlength="50" placeholder="세부 날짜 / 즉시입주"></label>
+              <label class="post-field legal-nonres"><span>주차대수 *</span><input name="nonresParking" maxlength="60" placeholder="총 주차대수 등"></label>
+              <label class="post-field legal-nonres"><span>관리비 (해당 시)</span><input name="nonresManagementFee" maxlength="120" placeholder="주택 외 건축물은 표시 생략 가능. 표시할 경우 정확히 입력"></label>
+              <label class="post-field legal-nonres"><span>방향 *</span><select name="nonresDirection"><option value="">선택</option><option>동향</option><option>서향</option><option>남향</option><option>북향</option><option>북동향</option><option>남동향</option><option>남서향</option><option>북서향</option></select></label>
+              <label class="post-field legal-nonres"><span>방향 기준 *</span><select name="nonresDirectionBasis"><option value="">선택</option><option>주된 출입구 기준</option></select></label>
+              <label class="post-field legal-warehouse"><span>토지면적 (실무)</span><input name="siteArea" maxlength="40" placeholder="예: 1,000㎡"></label>
+              <label class="post-field legal-warehouse"><span>건물면적 (실무)</span><input name="buildingArea" maxlength="40" placeholder="예: 500㎡"></label>
+              <label class="post-field legal-warehouse"><span>층고·전력 등 (실무)</span><input name="factorySpecs" maxlength="120" placeholder="예: 층고 7m / 전력 100kW"></label>
+
+              <label class="post-field legal-land"><span>지목 *</span><input name="landCategory" maxlength="30" placeholder="예: 대, 전, 답, 공장용지"></label>
+              <label class="post-field legal-land"><span>용도지역 (실무)</span><input name="zoning" maxlength="60" placeholder="토지이용계획확인서 기준"></label>
+              <label class="post-field legal-land"><span>도로접면 (실무)</span><input name="roadAccess" maxlength="80" placeholder="예: 6m 도로 접함"></label>
+
+              <label class="post-field legal-presale"><span>분양 대상 종류 *</span><input name="presaleUse" maxlength="60" placeholder="예: 공동주택(아파트) 분양권"></label>
+              <label class="post-field legal-presale"><span>단지·사업명 *</span><input name="complexName" maxlength="80" placeholder="예: 시흥 ○○아파트"></label>
+              <label class="post-field legal-presale"><span>입주 예정 *</span><input name="expectedMoveIn" maxlength="50" placeholder="예: 2027년 7월 예정"></label>
+              <label class="post-field legal-presale"><span>분양가 (실무)</span><input name="salePrice" maxlength="50" placeholder="예: 4억 5,000만원"></label>
+              <label class="post-field legal-presale"><span>프리미엄 P (실무)</span><input name="premium" maxlength="50" placeholder="예: 3,000만원"></label>
+              <label class="post-field legal-presale"><span>동·호/층 정보 (공개범위 확인)</span><input name="unitInfo" maxlength="60" placeholder="광고에 표시할 범위만 입력"></label>
+            </div>
+            <label class="privacy-consent legal-ad-confirm"><input name="legalAdConfirmed" type="checkbox"><span>등기·대장·중개의뢰 내용 등을 확인했으며, 실제 거래 가능한 매물이고 위 표시사항과 가격·거래조건이 사실과 다르지 않음을 확인했습니다. *</span></label>
+            <p class="property-table-status" id="legal-ad-status" role="status" aria-live="polite"></p>
+          </section>
           <section class="post-field post-field-wide property-table-editor" aria-labelledby="property-table-label">
             <h3 id="property-table-label">매물정보표</h3>
             <p>Excel에서 셀 범위를 복사한 뒤 아래 입력란을 선택하고 Ctrl+V로 붙여넣어 주세요. 붙여넣은 셀은 실제 텍스트 표로 저장됩니다.</p>
@@ -223,6 +272,13 @@
         <div class="customer-inquiry-tools"><button class="customer-check-button" id="open-my-inquiries" type="button">내 접수 확인·수정</button><small>이 기기에서 접수한 매물을 4자리 비밀번호로 확인할 수 있습니다.</small></div>
         <div class="post-form-actions"><button class="form-cancel" id="cancel-inquiry" type="button">취소</button><button class="form-submit" id="submit-inquiry" type="submit">접수하기</button></div>
       </form>
+      <section class="inquiry-success" id="inquiry-success" hidden aria-live="polite">
+        <div class="inquiry-success-mark" aria-hidden="true">✓</div>
+        <h3>감사합니다. 매물이 정상적으로 접수되었습니다.</h3>
+        <p>접수 내용을 확인한 후 빠른 시간 안에 연락드리겠습니다.</p>
+        <p class="inquiry-success-note">접수하신 내용은 <strong>내 접수 확인·수정</strong>에서 확인하실 수 있습니다.</p>
+        <div class="post-form-actions inquiry-success-actions"><button class="form-submit" id="confirm-inquiry-success" type="button">확인</button></div>
+      </section>
     </dialog>
 
 

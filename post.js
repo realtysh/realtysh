@@ -90,6 +90,32 @@ function youtubeEmbedUrl(value) {
   return "";
 }
 
+function formatPropertyTableValue(label, value) {
+  const text = String(value ?? "").trim();
+  if (!text) return text;
+
+  if (label === "면적") {
+    // 기존 매물처럼 "타입103A/공급103.1/전용75.9"로 저장된 값도
+    // 상세 화면에서는 공급·전용 면적에 ㎡를 명확히 표시한다.
+    return text
+      .replace(/(공급\s*[:：]?\s*)(\d+(?:\.\d+)?)(?!\s*(?:㎡|m²|m2))/gi, "$1$2㎡")
+      .replace(/(전용\s*[:：]?\s*)(\d+(?:\.\d+)?)(?!\s*(?:㎡|m²|m2))/gi, "$1$2㎡")
+      .replace(/\s*\/\s*/g, " / ");
+  }
+
+  if (label === "주차대수") {
+    const match = text.replace(/,/g, "").match(/^(?:총\s*)?(\d+)\s*(?:대)?$/);
+    if (match) return `총 ${Number(match[1]).toLocaleString("ko-KR")}대`;
+  }
+
+  if (label === "관리비") {
+    const match = text.replace(/,/g, "").match(/^(\d+)\s*(?:원)?$/);
+    if (match) return `${Number(match[1]).toLocaleString("ko-KR")}원`;
+  }
+
+  return text;
+}
+
 function renderPost(post) {
   if (!post) {
     postExists = false;
@@ -122,7 +148,8 @@ function renderPost(post) {
       const tableRow = document.createElement("tr");
       row.forEach((value, index) => {
         const cell = document.createElement(index % 2 === 0 ? "th" : "td");
-        cell.textContent = value;
+        const label = row[index - 1] || "";
+        cell.textContent = index % 2 === 1 ? formatPropertyTableValue(label, value) : value;
         tableRow.append(cell);
       });
       propertyTableBody.append(tableRow);

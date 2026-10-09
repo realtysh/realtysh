@@ -762,3 +762,22 @@ button { color: inherit; }
 .inquiry-admin-actions { display:flex; gap:8px; justify-content:flex-end; align-items:center; margin-top:14px; flex-wrap:wrap; }
 .inquiry-delete-button { border:1px solid #b84a3c; background:#fff; color:#a23d31; padding:10px 14px; border-radius:4px; font-weight:700; cursor:pointer; }
 .inquiry-delete-button:hover { background:#fff4f2; }
+
+
+/* Customer inquiry success confirmation */
+.inquiry-success { padding: 42px 28px 30px; text-align: center; }
+.inquiry-success[hidden] { display: none; }
+.inquiry-success-mark { width: 64px; height: 64px; margin: 0 auto 20px; border-radius: 50%; display: grid; place-items: center; background: #1f5a42; color: #fff; font-size: 34px; font-weight: 800; }
+.inquiry-success h3 { margin: 0 0 14px; font-size: clamp(1.35rem, 3vw, 1.8rem); color: #173f30; }
+.inquiry-success p { margin: 7px 0; line-height: 1.7; color: #4d5b54; }
+.inquiry-success-note { margin-top: 18px !important; padding: 14px 16px; background: #f5f1e6; border-radius: 10px; }
+.inquiry-success-actions { justify-content: center; margin-top: 24px; }
+.inquiry-success-actions .form-submit { min-width: 140px; }
+
+/* 표시·광고 법정 필수사항 점검 */
+.legal-ad-editor{border:1px solid #d8c9a4;border-radius:16px;padding:20px;background:#fffdf7}
+.legal-ad-editor h3{margin:0 0 8px;color:#173f32}
+.legal-ad-help{margin:0 0 16px;color:#5d5a50;line-height:1.6}
+.legal-ad-confirm{margin-top:14px;padding:14px;border-radius:12px;background:#f6f1e5}
+.legal-ad-editor [hidden]{display:none!important}
+.legal-ad-type-note{margin:.35rem 0 1rem;padding:.8rem 1rem;border-radius:10px;background:rgba(26,67,50,.07);line-height:1.55;font-weight:600}.legal-common-fields [hidden]{display:none!important}

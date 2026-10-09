@@ -24,6 +24,7 @@ const propertyTablePreview = document.querySelector("#property-table-preview");
 const propertyTableStatus = document.querySelector("#property-table-status");
 const clearPropertyTableButton = document.querySelector("#clear-property-table");
 const brokerTablePreview = document.querySelector("#broker-table-preview");
+const legalAdStatus = document.querySelector("#legal-ad-status");
 const menuToggle = document.querySelector(".menu-toggle");
 const mainNav = document.querySelector("#main-nav");
 const adminAccess = document.querySelector("#admin-access");
@@ -254,11 +255,13 @@ function openPostForm(post = null) {
   postForm.reset();
   postFormStatus.textContent = "";
   propertyTableStatus.textContent = "";
+  legalAdStatus.textContent = "";
   currentPropertyTable = [];
   currentBrokerTable = post ? normalizePropertyTable(post.brokerTable) : normalizePropertyTable(defaultBrokerTable);
   renderPropertyTablePreview();
   renderBrokerTablePreview();
   postFormTitle.textContent = editingPostId ? "게시글 수정" : "매물 게시글 등록";
+  setLegalFieldVisibility();
   savePostButton.textContent = editingPostId ? "수정 저장" : "게시글 등록";
   existingPostMedia.replaceChildren();
   existingPostMedia.hidden = true;
@@ -269,7 +272,9 @@ function openPostForm(post = null) {
       const field = postForm.elements.namedItem(key);
       if (field && typeof value === "string") field.value = value;
     });
-    currentPropertyTable = normalizePropertyTable(post.propertyTable);
+    currentPropertyTable = stripLegalRows(normalizePropertyTable(post.propertyTable));
+    fillLegalFieldsFromTable(post.propertyTable);
+    setLegalFieldVisibility();
     renderPropertyTablePreview();
     const existingPhotos = Array.isArray(post.photoUrls) ? post.photoUrls : [];
     if (existingPhotos.length) {
@@ -555,6 +560,95 @@ clearPropertyTableButton.addEventListener("click", () => {
   renderPropertyTablePreview();
 });
 
+const legalManagedLabels = new Set([
+  "면적","건축물 용도","총 층수","해당 층","사용승인일 등","방 수","욕실 수","입주 가능일","주차대수","관리비","방향",
+  "관리비 세부내역","지목","용도지역","도로접면","토지면적","건물면적","공장·창고 사양",
+  "분양 대상 종류","단지·사업명","입주 예정","분양가","프리미엄 P","동·호/층 정보"
+]);
+
+const legalTypeConfig = {
+  apartment: { group:"residential", note:"아파트: 주거용 건축물 광고 필수사항을 빠짐없이 입력합니다. 방향은 거실 또는 안방 기준을 함께 표시합니다." },
+  house: { group:"residential", note:"주택: 주거용 건축물 광고 필수사항을 빠짐없이 입력합니다. 대장상 용도와 면적을 확인해 주세요." },
+  commercial: { group:"nonres", note:"상가: 비주거용 건축물 기준으로 입력합니다. 방향은 주된 출입구 기준으로 표시합니다." },
+  warehouse: { group:"warehouse", note:"공장·창고: 비주거용 건축물 필수사항에 더해 토지·건물면적, 층고·전력 등 실무정보를 함께 관리합니다." },
+  land: { group:"land", note:"토지: 토지 광고에 맞춰 면적·지목을 확인하고, 용도지역·도로접면은 실무 확인정보로 관리합니다." },
+  presale: { group:"presale", note:"분양권: 완성된 기존 건축물과 동일한 항목을 억지로 요구하지 않고, 권리의 대상·면적·가격·사업명·입주예정 등 분양권 정보 중심으로 확인합니다." },
+  other: { group:"nonres", note:"기타 건축물: 실제 중개대상물의 법적 종류를 먼저 확인한 뒤 해당 표시사항을 입력해 주세요." }
+};
+
+function setLegalFieldVisibility() {
+  const type = postForm.elements.namedItem("propertyType").value;
+  const group = (legalTypeConfig[type] || legalTypeConfig.other).group;
+  document.querySelectorAll(".legal-residential,.legal-nonres,.legal-warehouse,.legal-land,.legal-presale").forEach(el => { el.hidden = true; });
+  if(group === "residential") document.querySelectorAll(".legal-residential").forEach(el => { el.hidden=false; });
+  if(group === "nonres") document.querySelectorAll(".legal-nonres").forEach(el => { el.hidden=false; });
+  if(group === "warehouse") document.querySelectorAll(".legal-nonres,.legal-warehouse").forEach(el => { el.hidden=false; });
+  if(group === "land") document.querySelectorAll(".legal-land").forEach(el => { el.hidden=false; });
+  if(group === "presale") document.querySelectorAll(".legal-presale").forEach(el => { el.hidden=false; });
+  const note=document.querySelector("#legal-ad-type-note"); if(note) note.textContent=(legalTypeConfig[type]||legalTypeConfig.other).note;
+}
+
+function tableValue(table, label) {
+  for (const row of normalizePropertyTable(table)) {
+    for (let i = 0; i < row.length - 1; i += 2) if (row[i].trim() === label) return row[i + 1].trim();
+  }
+  return "";
+}
+
+function fillLegalFieldsFromTable(table) {
+  const mapping={legalArea:"면적",landCategory:"지목",zoning:"용도지역",roadAccess:"도로접면",siteArea:"토지면적",buildingArea:"건물면적",factorySpecs:"공장·창고 사양",presaleUse:"분양 대상 종류",complexName:"단지·사업명",expectedMoveIn:"입주 예정",salePrice:"분양가",premium:"프리미엄 P",unitInfo:"동·호/층 정보"};
+  Object.entries(mapping).forEach(([name,label])=>{const f=postForm.elements.namedItem(name);if(f)f.value=tableValue(table,label);});
+  const residential={buildingUse:"건축물 용도",totalFloors:"총 층수",currentFloor:"해당 층",approvalDate:"사용승인일 등",roomCount:"방 수",bathroomCount:"욕실 수",moveInDate:"입주 가능일",parking:"주차대수",managementFee:"관리비",managementFeeDetails:"관리비 세부내역"};
+  const nonres={nonresBuildingUse:"건축물 용도",nonresTotalFloors:"총 층수",nonresCurrentFloor:"해당 층",nonresApprovalDate:"사용승인일 등",nonresRoomCount:"방 수",nonresBathroomCount:"욕실 수",nonresMoveInDate:"입주 가능일",nonresParking:"주차대수",nonresManagementFee:"관리비"};
+  [residential,nonres].forEach(m=>Object.entries(m).forEach(([name,label])=>{const f=postForm.elements.namedItem(name);if(f)f.value=tableValue(table,label);}));
+  const directionText=tableValue(table,"방향"); const dm=directionText.match(/^(동향|서향|남향|북향|북동향|남동향|남서향|북서향)(?:\s*\((.+)\))?$/);
+  ["direction","nonresDirection"].forEach(n=>{const f=postForm.elements.namedItem(n);if(f)f.value=dm?.[1]||"";});
+  ["directionBasis","nonresDirectionBasis"].forEach(n=>{const f=postForm.elements.namedItem(n);if(f)f.value=dm?.[2]||"";});
+}
+
+function stripLegalRows(table) { return normalizePropertyTable(table).filter(row => !legalManagedLabels.has((row[0]||"").trim())); }
+function requiredValue(fd,name,label){ if(!(fd.get(name)||"").trim()) return `${label}을(를) 입력해 주세요.`; return ""; }
+function validateSquareMeters(value,label="면적") {
+  const text=String(value||"").trim();
+  if(!text) return `${label}을(를) 입력해 주세요.`;
+  if(!/[0-9]/.test(text) || !/(㎡|m²|m2)/i.test(text)) return `${label}은(는) 숫자와 제곱미터(㎡) 단위를 함께 입력해 주세요. 예: 전용 75.9㎡`;
+  return "";
+}
+
+function validateLegalAd(fd) {
+  const type=fd.get("propertyType"), group=(legalTypeConfig[type]||legalTypeConfig.other).group;
+  let err=validateSquareMeters(fd.get("legalArea"),"면적"); if(err)return err;
+  if(!fd.get("legalAdConfirmed")) return "표시·광고 내용 확인란에 체크해 주세요.";
+  const price=(fd.get("price")||"").trim(); if(/문의|협의|부터|이상|이하|~|∼/.test(price)) return "가격은 '문의/협의/범위'가 아닌 현재 거래예정 단일가격으로 입력해 주세요.";
+  if(group==="land") return requiredValue(fd,"landCategory","지목");
+  if(group==="warehouse") {
+    for (const [name,label] of [["siteArea","토지면적"],["buildingArea","건물면적"]]) {
+      const v=(fd.get(name)||"").trim();
+      if(v){ err=validateSquareMeters(v,label); if(err)return err; }
+    }
+  }
+  if(group==="presale") { for(const x of [["presaleUse","분양 대상 종류"],["complexName","단지·사업명"],["expectedMoveIn","입주 예정"]]){err=requiredValue(fd,...x);if(err)return err;} return ""; }
+  const prefix=group==="residential"?"":"nonres";
+  const names=group==="residential"?
+    [["buildingUse","건축물 용도"],["totalFloors","총 층수"],["currentFloor","해당 층"],["approvalDate","사용승인일 등"],["roomCount","방 수"],["bathroomCount","욕실 수"],["moveInDate","입주 가능일"],["parking","주차대수"],["managementFee","관리비"],["direction","방향"],["directionBasis","방향 기준"]]:
+    [["nonresBuildingUse","건축물 용도"],["nonresTotalFloors","총 층수"],["nonresCurrentFloor","해당 층"],["nonresApprovalDate","사용승인일 등"],["nonresRoomCount","방 수"],["nonresBathroomCount","욕실 수"],["nonresMoveInDate","입주 가능일"],["nonresParking","주차대수"],["nonresDirection","방향"],["nonresDirectionBasis","방향 기준"]];
+  for(const x of names){err=requiredValue(fd,...x);if(err)return err;} return "";
+}
+
+function buildLegalRows(fd) {
+  const type=fd.get("propertyType"), group=(legalTypeConfig[type]||legalTypeConfig.other).group, rows=[["면적",(fd.get("legalArea")||"").trim()]];
+  if(group==="land") rows.push(["지목",fd.get("landCategory")||""],["용도지역",fd.get("zoning")||""],["도로접면",fd.get("roadAccess")||""]);
+  else if(group==="presale") rows.push(["분양 대상 종류",fd.get("presaleUse")||""],["단지·사업명",fd.get("complexName")||""],["입주 예정",fd.get("expectedMoveIn")||""],["분양가",fd.get("salePrice")||""],["프리미엄 P",fd.get("premium")||""],["동·호/층 정보",fd.get("unitInfo")||""]);
+  else {
+    const pre=group==="residential"?"":"nonres"; const get=n=>fd.get(pre+n)||"";
+    rows.push(["건축물 용도",get(group==="residential"?"buildingUse":"BuildingUse")],["총 층수",get(group==="residential"?"totalFloors":"TotalFloors")],["해당 층",get(group==="residential"?"currentFloor":"CurrentFloor")],["사용승인일 등",get(group==="residential"?"approvalDate":"ApprovalDate")],["방 수",get(group==="residential"?"roomCount":"RoomCount")],["욕실 수",get(group==="residential"?"bathroomCount":"BathroomCount")],["입주 가능일",get(group==="residential"?"moveInDate":"MoveInDate")],["주차대수",get(group==="residential"?"parking":"Parking")],["관리비",get(group==="residential"?"managementFee":"ManagementFee")],...(group==="residential" && (fd.get("managementFeeDetails")||"").trim() ? [["관리비 세부내역",fd.get("managementFeeDetails")]] : []),["방향",`${get(group==="residential"?"direction":"Direction")} (${get(group==="residential"?"directionBasis":"DirectionBasis")})`]);
+    if(group==="warehouse") { const sa=fd.get("siteArea")||"", ba=fd.get("buildingArea")||""; rows.push(["토지면적",sa],["건물면적",ba],["공장·창고 사양",fd.get("factorySpecs")||""]); }
+  }
+  return rows.filter(r=>String(r[1]).trim());
+}
+
+postForm.elements.namedItem("propertyType").addEventListener("change", setLegalFieldVisibility);
+
 async function uploadImage(file) {
   const formData = new FormData();
   formData.append("file", file);
@@ -596,6 +690,9 @@ postForm.addEventListener("submit", async (event) => {
   }
 
   const formData = new FormData(postForm);
+  const invalidLegalAd = validateLegalAd(formData);
+  legalAdStatus.textContent = invalidLegalAd;
+  if (invalidLegalAd) return;
   const photoFiles = [...photosInput.files];
   const currentPost = editingPostId ? posts.find((post) => post.id === editingPostId) : null;
   const removedPhotos = new Set(formData.getAll("removePhoto"));
@@ -630,7 +727,7 @@ postForm.addEventListener("submit", async (event) => {
     description: formData.get("description").trim(),
     youtubeUrl,
     photoUrls: currentPhotoUrls,
-    propertyTable: serializePropertyTable(normalizePropertyTable(currentPropertyTable)),
+    propertyTable: serializePropertyTable([...buildLegalRows(formData), ...normalizePropertyTable(currentPropertyTable)]),
     brokerTable: serializePropertyTable(normalizePropertyTable(currentBrokerTable))
   };
   postData.photoUrls = postData.photoUrls.filter((url) => !removedPhotos.has(url));
@@ -664,6 +761,7 @@ postForm.addEventListener("submit", async (event) => {
     }
     postDialog.close();
     postForm.reset();
+    legalAdStatus.textContent = "";
     editingPostId = null;
   } catch (error) {
     if (error.name === "CloudinaryUploadError") {
@@ -729,6 +827,7 @@ connectFirebase();
 const inquiryDialog = document.querySelector("#inquiry-dialog");
 const inquiryForm = document.querySelector("#inquiry-form");
 const inquiryStatus = document.querySelector("#inquiry-status");
+const inquirySuccess = document.querySelector("#inquiry-success");
 const inquiryManageButton = document.querySelector("#inquiry-manage");
 const inquiryListDialog = document.querySelector("#inquiry-list-dialog");
 const inquiryList = document.querySelector("#inquiry-list");
@@ -751,7 +850,7 @@ async function ensureCustomerAuth() {
   return result.user;
 }
 function openInquiryForm() {
-  inquiryForm.reset(); inquiryStatus.textContent = ""; inquiryDialog.showModal();
+  inquiryForm.hidden = false; inquirySuccess.hidden = true; inquiryForm.reset(); inquiryStatus.textContent = ""; inquiryDialog.showModal();
 }
 document.querySelector("#open-inquiry")?.addEventListener("click", openInquiryForm);
 document.querySelector('a[href="#inquiry"]')?.addEventListener("click", (event) => {
@@ -787,12 +886,21 @@ inquiryForm?.addEventListener("submit", async (event) => {
       address: fd.get("address").trim(), area: fd.get("area").trim(), price: fd.get("price").trim(), notes: fd.get("notes").trim(),
       status: "new", createdAt: firebase.firestore.FieldValue.serverTimestamp(), updatedAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    inquiryForm.reset(); inquiryStatus.textContent = "접수되었습니다. 이 기기에서 4자리 비밀번호로 확인·수정할 수 있습니다.";
-    setTimeout(() => inquiryDialog.open && inquiryDialog.close(), 1900);
+    inquiryForm.reset();
+    inquiryStatus.textContent = "";
+    inquiryForm.hidden = true;
+    inquirySuccess.hidden = false;
   } catch (error) {
     console.error("매물 접수 실패", error);
     inquiryStatus.textContent = error?.code === "auth/operation-not-allowed" ? "Firebase에서 익명 로그인을 먼저 활성화해야 합니다." : "접수하지 못했습니다. 잠시 후 다시 시도해 주세요.";
   } finally { button.disabled = false; }
+});
+
+
+document.querySelector("#confirm-inquiry-success")?.addEventListener("click", () => {
+  inquirySuccess.hidden = true;
+  inquiryForm.hidden = false;
+  inquiryDialog.close();
 });
 
 const statusLabels = { new:"신규", consulting:"상담중", listed:"매물등록", hold:"보류", completed:"완료" };
