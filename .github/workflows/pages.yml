@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+﻿name: Deploy to GitHub Pages
 
 on:
   push:
@@ -38,7 +38,7 @@ jobs:
           FIREBASE_MEASUREMENT_ID: ${{ vars.FIREBASE_MEASUREMENT_ID || secrets.FIREBASE_MEASUREMENT_ID }}
         run: |
           mkdir -p site
-          cp index.html post.html styles.css posts.css post.js script.js robots.txt sitemap.xml naver67821871de9a89c332917067e316e832.html google406b1ef14534d6cc.html site/
+          cp index.html favicon.png post.html styles.css posts.css post.js script.js robots.txt sitemap.xml naver67821871de9a89c332917067e316e832.html google406b1ef14534d6cc.html site/
           node <<'NODE'
           const fs = require('node:fs');
           const requiredKeys = [
@@ -72,7 +72,7 @@ jobs:
             ? `Firebase config incomplete; using local favorites. Missing: ${missingKeys.join(', ')}`
             : 'Firebase web config generated.');
           NODE
-                # Firestore 게시글 주소를 sitemap.xml에 자동 추가
+                # Firestore 寃뚯떆湲 二쇱냼瑜?sitemap.xml???먮룞 異붽?
       - name: Generate post sitemap
         env:
           FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY || secrets.FIREBASE_API_KEY }}
@@ -140,7 +140,7 @@ jobs:
             process.exit(1);
           });
           NODE
-            # 검색엔진용 정적 게시글 페이지 자동 생성
+            # 寃?됱뿏吏꾩슜 ?뺤쟻 寃뚯떆湲 ?섏씠吏 ?먮룞 ?앹꽦
       - name: Generate static post pages
         env:
           FIREBASE_API_KEY: ${{ vars.FIREBASE_API_KEY || secrets.FIREBASE_API_KEY }}
@@ -208,11 +208,11 @@ jobs:
                 const id = doc.name.split('/').pop();
                 const post = firestoreFields(doc.fields || {});
 
-                const title = post.title || '시흥 부동산 매물';
-                const location = post.location || '시흥시';
+                const title = post.title || '?쒗씎 遺?숈궛 留ㅻЪ';
+                const location = post.location || '?쒗씎??;
                 const price = post.price || '';
                 const description =
-                  post.description || '현진부동산 매물 상세정보입니다.';
+                  post.description || '?꾩쭊遺?숈궛 留ㅻЪ ?곸꽭?뺣낫?낅땲??';
 
                 const staticUrl = `https://realtysh.com/posts/${id}.html`;
                 const originalUrl =
@@ -223,7 +223,7 @@ jobs:
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1">
-            <title>${escapeHtml(title)} | 현진부동산</title>
+            <title>${escapeHtml(title)} | ?꾩쭊遺?숈궛</title>
             <meta name="description" content="${escapeHtml(`${location} ${title} ${price}. ${description}`)}">
             <link rel="canonical" href="${staticUrl}">
           </head>
@@ -234,7 +234,7 @@ jobs:
                 <p>${escapeHtml(location)}</p>
                 <p>${escapeHtml(price)}</p>
                 <div>${escapeHtml(description).replaceAll('\n', '<br>')}</div>
-                <p><a href="${originalUrl}">사진·상세정보·문의 및 댓글 보기</a></p>
+                <p><a href="${originalUrl}">?ъ쭊쨌?곸꽭?뺣낫쨌臾몄쓽 諛??볤? 蹂닿린</a></p>
               </article>
             </main>
           </body>
