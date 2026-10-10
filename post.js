@@ -127,7 +127,7 @@ function renderPost(post) {
   document.querySelector('meta[name="description"]').content = `${post.location || "시흥시"} ${post.title || "부동산 매물"} ${post.price || ""}. ${post.description || "현진부동산 매물 상세정보입니다."}`;
   document.querySelector('meta[property="og:title"]').content = `${post.title || "시흥 부동산 매물"} | 현진부동산`;
   document.querySelector('meta[property="og:description"]').content = `${post.location || "시흥시"} ${post.title || "부동산 매물"} ${post.price || ""}. ${post.description || "현진부동산 매물 상세정보입니다."}`;
-  document.querySelector("#canonical-url").href = `https://realtysh.com/posts/${encodeURIComponent(postId)}.html`;
+  document.querySelector("#canonical-url").href = `https://realtysh.com/post.html?id=${encodeURIComponent(postId)}`;
   const typeTag = document.createElement("span");
   typeTag.textContent = propertyTypes[post.propertyType] || "매물";
   const dealTag = document.createElement("span");
