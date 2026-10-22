@@ -781,3 +781,295 @@ button { color: inherit; }
 .legal-ad-confirm{margin-top:14px;padding:14px;border-radius:12px;background:#f6f1e5}
 .legal-ad-editor [hidden]{display:none!important}
 .legal-ad-type-note{margin:.35rem 0 1rem;padding:.8rem 1rem;border-radius:10px;background:rgba(26,67,50,.07);line-height:1.55;font-weight:600}.legal-common-fields [hidden]{display:none!important}
+
+
+/* 2026-10 homepage featured listings, original logo, neighborhood news */
+.brand-logo{display:block;object-fit:cover;border-radius:50%;flex:0 0 auto}.brand-logo-header{width:42px;height:42px}.brand-logo-office{width:88px;height:88px}.brand-logo-footer{width:58px;height:58px}
+.hero-copy{width:min(92%,1420px)!important;padding:50px 0 80px!important}.category-buttons{grid-template-columns:repeat(6,minmax(0,1fr))!important;gap:12px!important}.category-button{min-height:94px!important;padding:14px 10px!important;align-items:center!important;justify-content:center!important;flex-direction:column!important;background:rgba(3,54,39,.72)!important;border:1px solid rgba(255,255,255,.48)!important}.category-button::after,.category-button img{display:none!important}.category-icon{position:relative;z-index:2;font-size:30px;line-height:1}.category-label{position:relative;z-index:2;font-size:15px!important}.category-label small{display:none}.category-arrow{position:absolute!important;right:12px!important;bottom:10px!important;z-index:2}.neighborhood-button{border-color:#f5c85c!important;color:#ffe36a!important}
+.featured-section{margin:26px auto 24px;text-align:left}.featured-heading{display:flex;align-items:baseline;gap:18px;margin-bottom:14px}.featured-heading h2{margin:0;color:#fff;font-size:28px}.featured-heading p{margin:0;color:rgba(255,255,255,.78);font-size:13px}.featured-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}.featured-grid .property-card{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 10px 28px rgba(0,0,0,.22)}.featured-grid .property-thumbnail{height:150px}.featured-grid .property-list-details{padding:13px 15px 15px}.featured-grid .property-list-details h3{font-size:18px}.featured-grid .property-price{font-size:22px}.featured-empty{grid-column:1/-1;color:rgba(255,255,255,.75);text-align:center;padding:25px}
+.featured-toggle{justify-content:center}.checkbox-line{display:flex!important;align-items:center;gap:8px;font-weight:700}.checkbox-line input{width:20px;height:20px}
+.office-card{gap:24px;flex-wrap:wrap}.naver-blog-button{display:inline-flex;align-items:center;gap:9px;border:1px solid #20c15a;border-radius:999px;padding:11px 16px;background:#10a943;color:#fff;font-size:13px;font-weight:700}.naver-blog-button strong{display:grid;place-items:center;width:24px;height:24px;border-radius:5px;background:#fff;color:#10a943;font-size:17px}
+.neighborhood-dialog{width:min(92vw,900px)}.neighborhood-toolbar{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:18px}.news-form{padding:18px;background:#f4f7f4;border-radius:10px;margin-bottom:20px}.news-list{display:grid;gap:14px;max-height:65vh;overflow:auto;padding-right:4px}.news-item{position:relative;border:1px solid #dce5df;border-radius:12px;padding:20px;background:#fff}.news-item-head{display:flex;justify-content:space-between;gap:20px;align-items:flex-start}.news-item h3{margin:0;font-size:20px}.news-item time{font-size:12px;color:#777}.news-content{white-space:pre-wrap;line-height:1.75;color:#39443d}.news-comments{border-top:1px solid #e6ece8;padding-top:14px}.news-comment-list p{margin:8px 0;padding:8px 10px;background:#f6f8f6;border-radius:7px}.news-comment-form{display:flex;gap:8px;margin-top:10px}.news-comment-form input{flex:1;padding:11px;border:1px solid #ccd7d0;border-radius:7px}.news-comment-form button,.news-delete{border:0;border-radius:7px;padding:10px 13px;background:#075d42;color:#fff;cursor:pointer}.news-delete{margin-top:12px;background:#6b756f}
+@media(max-width:900px){.category-buttons{grid-template-columns:repeat(3,1fr)!important}.featured-grid{grid-template-columns:repeat(2,1fr)}.brand-logo-office{width:72px;height:72px}}
+@media(max-width:600px){.brand-logo-header{width:34px;height:34px}.hero-copy{width:90%!important;padding:38px 0 55px!important}.category-buttons{grid-template-columns:repeat(2,1fr)!important}.category-button{min-height:82px!important}.category-icon{font-size:25px}.category-label{font-size:13px!important}.featured-heading{display:block}.featured-heading h2{font-size:23px}.featured-heading p{margin-top:5px}.featured-grid{grid-template-columns:1fr;gap:14px}.featured-grid .property-thumbnail{height:180px}.news-comment-form{flex-direction:column}.neighborhood-toolbar{align-items:flex-start;flex-direction:column}}
+
+/* Admin-only daily dashboard */
+.admin-today-stats{position:fixed;right:18px;top:76px;z-index:80;display:flex;align-items:center;gap:14px;padding:10px 14px;border:1px solid rgba(255,255,255,.22);border-radius:999px;background:rgba(4,69,49,.94);box-shadow:0 8px 24px rgba(0,0,0,.2);color:#fff;font-size:12px;backdrop-filter:blur(8px)}.admin-today-stats[hidden]{display:none}.admin-today-stats strong{color:#ffd04a}.admin-today-stats b{font-size:15px;color:#fff}@media(max-width:600px){.admin-today-stats{top:64px;right:10px;gap:9px;padding:8px 10px;font-size:11px}.admin-today-stats strong{display:none}}
+
+/* 2026-10-12: 추천매물 카드 - 사진 위, 핵심정보 아래, 3열 카드 */
+.featured-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.featured-card {
+  overflow: hidden;
+  border: 1px solid rgb(255 255 255 / 24%);
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 14px 30px rgb(0 0 0 / 18%);
+  color: var(--ink);
+}
+.featured-card-link {
+  display: block;
+  color: var(--ink);
+}
+.featured-card-photo {
+  display: grid;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
+  place-items: center;
+  background: #e8eee8;
+}
+.featured-card-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 300ms ease;
+}
+.featured-card:hover .featured-card-photo img {
+  transform: scale(1.035);
+}
+.featured-card-body {
+  padding: 14px 15px 15px;
+}
+.featured-card-meta {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.featured-type-badge,
+.featured-deal-badge {
+  display: inline-flex;
+  min-height: 23px;
+  align-items: center;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+}
+.featured-type-badge {
+  background: #e8f2ec;
+  color: #17603e;
+}
+.featured-deal-badge {
+  background: #fff0c9;
+  color: #8a5a00;
+}
+.featured-card-title {
+  overflow: hidden;
+  margin: 0;
+  color: #17251e;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.45;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.featured-card-price {
+  margin: 7px 0 3px;
+  color: #d35c35;
+  font-size: 21px;
+  font-weight: 900;
+}
+.featured-card-location {
+  margin: 0 0 10px;
+  color: #66736a;
+  font-size: 10px;
+}
+.featured-card-specs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid #e4e8e2;
+}
+.featured-spec {
+  display: inline-flex;
+  gap: 4px;
+  align-items: baseline;
+  padding: 5px 7px;
+  border-radius: 6px;
+  background: #f3f5f1;
+  color: #344239;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.featured-spec small {
+  color: #7a847d;
+  font-size: 9px;
+  font-weight: 500;
+}
+.featured-empty {
+  grid-column: 1 / -1;
+  color: rgb(255 255 255 / 80%);
+}
+@media (max-width: 900px) {
+  .featured-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .featured-grid { grid-template-columns: 1fr; }
+  .featured-card-price { font-size: 19px; }
+}
+
+
+/* 2026-10-12 v3: 제목 파랑 / 가격 빨강 / 주소+법정 표시정보 */
+.featured-card-title {
+  color: #1557a6 !important;
+}
+.featured-card-price {
+  color: #d62828 !important;
+}
+.featured-location-row {
+  display: flex;
+  gap: 7px;
+  align-items: baseline;
+  margin: 5px 0 9px;
+  color: #59665d;
+  font-size: 10px;
+}
+.featured-location-label {
+  flex: 0 0 auto;
+  color: #26382d;
+  font-weight: 800;
+}
+.featured-card-location {
+  margin: 0;
+  color: #59665d;
+}
+.featured-legal-info {
+  padding-top: 9px;
+  border-top: 1px solid #e4e8e2;
+}
+.featured-legal-heading {
+  margin: 0 0 6px;
+  color: #46564b;
+  font-size: 9px;
+  font-weight: 800;
+}
+.featured-broker-line {
+  margin: 9px 0 0;
+  padding-top: 8px;
+  border-top: 1px dashed #d9dfd7;
+  color: #7b857e;
+  font-size: 8px;
+  line-height: 1.45;
+}
+
+
+/* 2026-10-12 v5: 추천매물 크기 약 2/3로 축소
+   반 크기는 표시정보가 너무 작아질 수 있어 우선 4열 컴팩트형으로 조정 */
+@media (min-width: 901px) {
+  .featured-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+  .featured-card-photo {
+    aspect-ratio: 16 / 8.5 !important;
+  }
+  .featured-card-body {
+    padding: 10px 11px 11px !important;
+  }
+  .featured-card-meta {
+    margin-bottom: 5px !important;
+  }
+  .featured-type-badge,
+  .featured-deal-badge {
+    min-height: 20px !important;
+    padding: 0 7px !important;
+    font-size: 9px !important;
+  }
+  .featured-card-title {
+    font-size: 14px !important;
+  }
+  .featured-card-price {
+    margin: 4px 0 2px !important;
+    font-size: 17px !important;
+  }
+  .featured-card-specs {
+    gap: 4px !important;
+    padding-top: 7px !important;
+  }
+  .featured-spec {
+    gap: 3px !important;
+    padding: 4px 5px !important;
+    font-size: 9px !important;
+  }
+  .featured-spec small {
+    font-size: 8px !important;
+  }
+  .featured-broker-line {
+    margin-top: 6px !important;
+    padding-top: 6px !important;
+    font-size: 7.5px !important;
+  }
+}
+
+
+/* 2026-10-12 v6: 네이버 블로그 바로가기 - 매물접수 아래, CONTACT 위 중앙 */
+.naver-blog-shortcut-wrap {
+  display: flex;
+  width: 100%;
+  min-height: 118px;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 5.5%;
+  background: var(--paper);
+}
+.naver-blog-shortcut-wrap .naver-blog-button {
+  margin: 0;
+}
+@media (max-width: 600px) {
+  .naver-blog-shortcut-wrap {
+    min-height: 92px;
+    padding: 18px 5.5%;
+  }
+}
+
+
+/* 2026-10-12 v7: 하단 중복 로고/현진부동산/매물정보 안내 줄 제거 */
+.site-footer {
+  display: none !important;
+}
+
+/* 네이버 블로그 바로가기: CONTACT 녹색 박스 첫 줄 오른쪽 중앙 */
+.office-card-brand {
+  justify-content: flex-start;
+}
+.office-card-brand .naver-blog-button-office {
+  margin-left: auto;
+  margin-right: clamp(12px, 5vw, 72px);
+  flex: 0 0 auto;
+}
+.naver-blog-shortcut-wrap {
+  display: none !important;
+}
+@media (max-width: 700px) {
+  .office-card-brand {
+    flex-wrap: wrap;
+  }
+  .office-card-brand .naver-blog-button-office {
+    margin: 12px 0 0 auto;
+  }
+}
+
+/* 2026-10-20: multiple photo upload + representative photo controls */
+.new-photo-preview,
+.existing-post-media { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-start; }
+.existing-photo-option { position: relative; display: grid; width: 110px; gap: 5px; color: var(--ink); font-size: 10px; }
+.existing-photo-option img { width: 110px; height: 82px; object-fit: cover; border-radius: 8px; border: 1px solid rgba(17,79,59,.18); }
+.existing-photo-option input { position: static; width: 15px; height: 15px; accent-color: var(--green); }
+.photo-choice { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+.photo-remove-choice { color: #a93f2d; }
+.new-photo-option { color: var(--ink); }
+
+
+/* 2026-10-21: 관리자 날짜별 매물 조회 통계 복원 */
+.admin-today-stats{cursor:pointer;font-family:inherit}.admin-today-stats small{color:rgba(255,255,255,.72);font-size:9px}.admin-today-stats:hover{transform:translateY(-1px);box-shadow:0 10px 28px rgba(0,0,0,.24)}
+.stats-dialog{width:min(92vw,680px);max-width:680px}.stats-dialog-body{padding:22px 30px 30px}.stats-date-picker{display:grid;gap:7px;margin-bottom:12px;color:var(--muted);font-size:11px}.stats-date-picker input{min-height:43px;padding:8px 11px;border:1px solid var(--line);background:#fff;color:var(--ink);font:inherit}
+.stats-summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0 18px}.stats-summary-card{padding:14px;border:1px solid var(--line);background:#eef1eb}.stats-summary-card small{display:block;margin-bottom:5px;color:var(--muted);font-size:10px}.stats-summary-card strong{color:var(--green-dark);font-size:19px}
+.stats-list{display:grid;border-top:1px solid var(--line)}.stats-list-row{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px 4px;border-bottom:1px solid var(--line)}.stats-list-row strong{overflow:hidden;font-size:12px;text-overflow:ellipsis;white-space:nowrap}.stats-list-row b{color:var(--green);font-size:13px}.stats-rank{display:grid;width:24px;height:24px;place-items:center;border-radius:50%;background:var(--green);color:#fff;font-size:10px}.stats-empty{margin:0;padding:28px 8px;color:var(--muted);text-align:center;font-size:12px}.stats-note{margin:16px 0 0;color:var(--muted);font-size:10px;line-height:1.6}
+@media(max-width:600px){.admin-today-stats small{display:none}.stats-dialog-body{padding:18px 20px 24px}.stats-summary{grid-template-columns:1fr}}

@@ -24,7 +24,7 @@
     <a class="skip-link" href="#main">본문으로 건너뛰기</a>
     <header class="site-header">
       <a class="wordmark" href="#top" aria-label="현진부동산 홈">
-        <span class="wordmark-icon" aria-hidden="true">현</span>
+        <img class="brand-logo brand-logo-header" src="hyunjin-logo.png" alt="">
         <span>현진부동산</span>
       </a>
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="main-nav" aria-label="메뉴 열기">
@@ -40,6 +40,13 @@
       </nav>
     </header>
 
+    <button class="admin-today-stats admin-only" id="admin-today-stats" type="button" hidden aria-live="polite" aria-label="날짜별 매물 조회 통계 열기">
+      <strong>오늘 현황</strong>
+      <span>방문자 <b id="admin-today-visitors">-</b>명</span>
+      <span>댓글 <b id="admin-today-comments">-</b>개</span>
+      <small>클릭하면 매물별 조회수</small>
+    </button>
+
     <main id="main">
       <div id="home-view">
       <section class="hero" id="top" aria-labelledby="hero-title">
@@ -48,27 +55,17 @@
           <h1 id="hero-title">현진부동산</h1>
           <p class="hero-description">좋은 집과 좋은 인연, 현진이 함께합니다.</p>
           <div class="category-buttons" role="group" aria-label="매물 종류 선택">
-            <button class="category-button" type="button" data-filter="apartment" aria-pressed="false">
-              <img src="https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=900&q=88" alt="" loading="eager">
-              <span class="category-label">아파트 · 주택<small>아파트 / 빌라 / 주택 / 다가구</small></span><span class="category-arrow" aria-hidden="true">›</span>
-            </button>
-            <button class="category-button" type="button" data-filter="commercial" aria-pressed="false">
-              <img src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=900&q=88" alt="" loading="eager">
-              <span class="category-label">상가<small>상가 / 사무실 / 근린상가</small></span><span class="category-arrow" aria-hidden="true">›</span>
-            </button>
-            <button class="category-button" type="button" data-filter="warehouse" aria-pressed="false">
-              <img src="https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=900&q=88" alt="" loading="eager">
-              <span class="category-label">공장 · 창고<small>공장 / 창고 / 물류센터 / 제조업</small></span><span class="category-arrow" aria-hidden="true">›</span>
-            </button>
-            <button class="category-button" type="button" data-filter="presale" aria-pressed="false">
-              <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&w=900&q=88" alt="" loading="eager">
-              <span class="category-label">분양권<small>아파트 / 오피스텔 / 상가 등</small></span><span class="category-arrow" aria-hidden="true">›</span>
-            </button>
-            <button class="category-button" type="button" data-filter="land" aria-pressed="false">
-              <img src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=900&q=88" alt="" loading="eager">
-              <span class="category-label">토지<small>주거용 / 상업용 / 개발부지</small></span><span class="category-arrow" aria-hidden="true">›</span>
-            </button>
+            <button class="category-button" type="button" data-filter="apartment" aria-pressed="false"><span class="category-icon">🏢</span><span class="category-label">아파트 · 주택</span><span class="category-arrow">›</span></button>
+            <button class="category-button" type="button" data-filter="presale" aria-pressed="false"><span class="category-icon">📄</span><span class="category-label">분양권</span><span class="category-arrow">›</span></button>
+            <button class="category-button" type="button" data-filter="commercial" aria-pressed="false"><span class="category-icon">🏪</span><span class="category-label">상가</span><span class="category-arrow">›</span></button>
+            <button class="category-button" type="button" data-filter="warehouse" aria-pressed="false"><span class="category-icon">🏭</span><span class="category-label">공장 · 창고</span><span class="category-arrow">›</span></button>
+            <button class="category-button" type="button" data-filter="land" aria-pressed="false"><span class="category-icon">🌳</span><span class="category-label">토지</span><span class="category-arrow">›</span></button>
+            <button class="category-button neighborhood-button" id="open-neighborhood-news" type="button"><span class="category-icon">📝</span><span class="category-label">우리동네 소식</span><span class="category-arrow">›</span></button>
           </div>
+          <section class="featured-section" aria-labelledby="featured-title">
+            <div class="featured-heading"><h2 id="featured-title">🔥 이번 주 추천매물</h2><p>현진부동산이 엄선한 추천매물입니다.</p></div>
+            <div class="featured-grid" id="featured-grid"><p class="featured-empty">추천매물을 준비 중입니다.</p></div>
+          </section>
           <button class="listing-inquiry-cta" id="open-inquiry" type="button">
             <span class="listing-inquiry-icon" aria-hidden="true">▤</span>
             <span><strong>매물 접수하기</strong><small>아파트 · 상가 · 토지 · 공장 · 분양권 등</small></span>
@@ -131,7 +128,7 @@
       <section class="office-card-section" id="contact" aria-labelledby="contact-title">
         <article class="office-card">
           <div class="office-card-brand">
-            <span class="office-card-mark" aria-hidden="true">현</span>
+            <img class="brand-logo brand-logo-office" src="hyunjin-logo.png" alt="현진부동산 시흥신천역 로고">
             <div>
               <p class="eyebrow">YOUR LOCAL REAL ESTATE PARTNER</p>
               <h2 id="contact-title">현진 공인중개사사무소</h2>
@@ -153,12 +150,13 @@
             <span>등록번호 <strong>41390-2024-00025</strong></span>
             <span>대표자 <strong>정선진</strong></span>
           </div>
+          <a class="naver-blog-button" href="https://blog.naver.com/jth9258" target="_blank" rel="noopener noreferrer"><strong>N</strong> 네이버 블로그 바로가기 <span>↗</span></a>
         </article>
       </section>
     </main>
 
     <footer class="site-footer">
-      <a class="wordmark footer-wordmark" href="#top"><span class="wordmark-icon" aria-hidden="true">현</span><span>현진부동산</span></a>
+      <a class="wordmark footer-wordmark" href="#top"><img class="brand-logo brand-logo-footer" src="hyunjin-logo.png" alt=""><span>현진부동산</span></a>
       <p>매물 정보와 이미지는 등록자가 제공한 내용입니다.</p>
       <span class="copyright">© 2026 현진 공인중개사사무소</span>
     </footer>
@@ -176,6 +174,7 @@
           <label class="post-field post-field-wide"><span>매물 제목</span><input name="title" required maxlength="80" placeholder="예: 시흥 신천동 역세권 상가"></label>
           <label class="post-field"><span>매물 종류</span><select name="propertyType" required><option value="commercial">상가</option><option value="warehouse">공장·창고</option><option value="apartment">아파트</option><option value="presale">분양권</option><option value="land">토지</option><option value="other">기타</option><option value="house">단독주택 (기존)</option></select></label>
           <label class="post-field"><span>거래 유형</span><select name="dealType" required><option value="sale">매매</option><option value="lease">전세</option><option value="monthly">월세</option></select></label>
+          <label class="post-field featured-toggle"><span>메인 추천매물</span><span class="checkbox-line"><input type="checkbox" name="featured"> 메인화면 추천매물로 표시</span></label>
           <label class="post-field"><span>가격</span><input name="price" required maxlength="40" placeholder="예: 매매 3억 5,000만원"></label>
           <label class="post-field"><span>소재지 (광고 표시용)</span><input name="location" required maxlength="80" placeholder="건축물대장/토지대장 기준 소재지"></label>
           <section class="post-field post-field-wide legal-ad-editor" id="legal-ad-editor" aria-labelledby="legal-ad-label">
@@ -202,7 +201,7 @@
               <label class="post-field legal-nonres"><span>총 층수 *</span><input name="nonresTotalFloors" maxlength="20" placeholder="건축물대장 기준"></label>
               <label class="post-field legal-nonres"><span>해당 층 *</span><input name="nonresCurrentFloor" maxlength="20" placeholder="예: 1층"></label>
               <label class="post-field legal-nonres"><span>사용승인일 등 *</span><input name="nonresApprovalDate" maxlength="40" placeholder="건축물대장 기준"></label>
-              <label class="post-field legal-nonres"><span>방 수 *</span><input name="nonresRoomCount" maxlength="20" placeholder="없으면 0개"></label>
+              <label class="post-field legal-nonres"><span>방 수 (해당 시)</span><input name="nonresRoomCount" maxlength="20" placeholder="주택 외 건축물은 표시 생략 가능"></label>
               <label class="post-field legal-nonres"><span>욕실 수 *</span><input name="nonresBathroomCount" maxlength="20" placeholder="없으면 0개"></label>
               <label class="post-field legal-nonres"><span>입주 가능일 *</span><input name="nonresMoveInDate" maxlength="50" placeholder="세부 날짜 / 즉시입주"></label>
               <label class="post-field legal-nonres"><span>주차대수 *</span><input name="nonresParking" maxlength="60" placeholder="총 주차대수 등"></label>
@@ -223,19 +222,16 @@
               <label class="post-field legal-presale"><span>분양가 (실무)</span><input name="salePrice" maxlength="50" placeholder="예: 4억 5,000만원"></label>
               <label class="post-field legal-presale"><span>프리미엄 P (실무)</span><input name="premium" maxlength="50" placeholder="예: 3,000만원"></label>
               <label class="post-field legal-presale"><span>동·호/층 정보 (공개범위 확인)</span><input name="unitInfo" maxlength="60" placeholder="광고에 표시할 범위만 입력"></label>
+              <label class="post-field legal-presale"><span>총 층수</span><input name="presaleTotalFloors" maxlength="20" placeholder="예: 35층"></label>
+              <label class="post-field legal-presale"><span>방향</span><select name="presaleDirection"><option value="">선택</option><option>동향</option><option>서향</option><option>남향</option><option>북향</option><option>북동향</option><option>남동향</option><option>남서향</option><option>북서향</option></select></label>
+              <label class="post-field legal-presale"><span>방향 기준</span><select name="presaleDirectionBasis"><option value="">선택</option><option>거실 기준</option><option>안방 기준</option></select></label>
+              <label class="post-field legal-presale"><span>방 수</span><input name="presaleRoomCount" maxlength="20" placeholder="예: 3개"></label>
+              <label class="post-field legal-presale"><span>욕실 수</span><input name="presaleBathroomCount" maxlength="20" placeholder="예: 2개"></label>
+              <label class="post-field legal-presale"><span>주차대수</span><input name="presaleParking" maxlength="60" placeholder="예: 총 1,500대"></label>
+              <label class="post-field legal-presale"><span>관리비</span><input name="presaleManagementFee" maxlength="120" placeholder="예: 입주 후 부과 예정 / 미정"></label>
             </div>
             <label class="privacy-consent legal-ad-confirm"><input name="legalAdConfirmed" type="checkbox"><span>등기·대장·중개의뢰 내용 등을 확인했으며, 실제 거래 가능한 매물이고 위 표시사항과 가격·거래조건이 사실과 다르지 않음을 확인했습니다. *</span></label>
             <p class="property-table-status" id="legal-ad-status" role="status" aria-live="polite"></p>
-          </section>
-          <section class="post-field post-field-wide property-table-editor" aria-labelledby="property-table-label">
-            <h3 id="property-table-label">매물정보표</h3>
-            <p>Excel에서 셀 범위를 복사한 뒤 아래 입력란을 선택하고 Ctrl+V로 붙여넣어 주세요. 붙여넣은 셀은 실제 텍스트 표로 저장됩니다.</p>
-            <label class="post-field" for="property-table-paste"><span>Excel 표 붙여넣기</span><textarea id="property-table-paste" rows="5" placeholder="Excel 셀을 복사한 뒤 여기에 붙여넣으세요."></textarea></label>
-            <div class="property-table-preview-wrap" id="property-table-preview-wrap" hidden>
-              <table class="property-table-preview" aria-label="매물정보표 미리보기"><tbody id="property-table-preview"></tbody></table>
-            </div>
-            <p class="property-table-status" id="property-table-status" role="status" aria-live="polite"></p>
-            <button class="form-cancel property-table-clear" id="clear-property-table" type="button">표 지우기</button>
           </section>
           <section class="post-field post-field-wide property-table-editor" aria-labelledby="broker-table-label">
             <h3 id="broker-table-label">중개사무소 정보</h3>
@@ -247,6 +243,7 @@
           <div class="post-field post-field-wide existing-post-media" id="existing-post-media" hidden></div>
           <label class="post-field post-field-wide file-picker"><span>현장 사진 (여러 장 선택 가능, JPG·PNG·WEBP / 각 최대 10MB)</span><span class="file-picker-control"><span>사진 추가</span><input name="photos" type="file" accept="image/jpeg,image/png,image/webp" multiple></span></label>
           <p class="selected-files post-field-wide" id="selected-photo-names">선택한 사진이 없습니다.</p>
+          <div class="new-photo-preview post-field-wide" id="new-photo-preview" hidden></div>
           <label class="post-field post-field-wide"><span>매물 상세 설명</span><textarea name="description" required maxlength="10000" rows="9" placeholder="매물의 특징과 주변 환경을 편하게 작성해 주세요."></textarea></label>
           <label class="post-field post-field-wide"><span>YouTube 영상 URL (선택)</span><input name="youtubeUrl" type="url" maxlength="500" placeholder="https://www.youtube.com/watch?v=..."></label>
         </div>
@@ -296,6 +293,31 @@
     <dialog class="post-dialog inquiry-list-dialog" id="inquiry-list-dialog" aria-labelledby="inquiry-list-title">
       <div class="post-dialog-head"><div><p class="eyebrow">PRIVATE · ADMIN ONLY</p><h2 id="inquiry-list-title">고객 매물 접수</h2></div><button class="dialog-close" id="close-inquiry-list" type="button" aria-label="닫기">×</button></div>
       <div class="inquiry-list-wrap"><div class="inquiry-admin-toolbar"><button class="customer-check-button is-active" id="active-inquiries-button" type="button">진행중 접수</button><button class="customer-check-button" id="completed-inquiries-button" type="button">완료 내역 보기</button></div><p class="post-form-status" id="inquiry-list-status"></p><div id="inquiry-list" class="inquiry-list"></div></div>
+    </dialog>
+
+    <dialog class="post-dialog neighborhood-dialog" id="neighborhood-dialog" aria-labelledby="neighborhood-title">
+      <div class="post-dialog-head"><div><p class="eyebrow">HYUNJIN LOCAL NEWS</p><h2 id="neighborhood-title">우리동네 소식</h2></div><button class="dialog-close" id="close-neighborhood" type="button" aria-label="닫기">×</button></div>
+      <div class="neighborhood-toolbar"><p>시흥 신천동과 인근 지역의 소식을 전합니다.</p><button class="post-create-inline admin-only" id="news-create" type="button" hidden>+ 소식 작성</button></div>
+      <form id="news-form" class="news-form" hidden>
+        <label class="post-field"><span>제목</span><input name="title" required maxlength="100" placeholder="소식 제목"></label>
+        <label class="post-field"><span>내용</span><textarea name="content" required maxlength="10000" rows="7" placeholder="우리동네 소식을 작성해 주세요."></textarea></label>
+        <div class="post-form-actions"><button class="form-cancel" id="cancel-news" type="button">취소</button><button class="form-submit" type="submit">등록</button></div><p class="post-form-status" id="news-status"></p>
+      </form>
+      <div class="news-list" id="news-list"><p>소식을 불러오는 중입니다.</p></div>
+    </dialog>
+
+    <dialog class="admin-dialog stats-dialog" id="stats-dialog" aria-labelledby="stats-dialog-title">
+      <div class="post-dialog-head">
+        <div><p class="eyebrow">ADMIN STATISTICS</p><h2 id="stats-dialog-title">날짜별 매물 조회수</h2></div>
+        <button class="dialog-close" id="close-stats-dialog" type="button" aria-label="닫기">×</button>
+      </div>
+      <div class="stats-dialog-body">
+        <label class="stats-date-picker"><span>조회 날짜</span><input id="stats-date" type="date"></label>
+        <p class="post-form-status" id="stats-status" role="status" aria-live="polite"></p>
+        <div class="stats-summary" id="stats-summary"></div>
+        <div class="stats-list" id="stats-list"></div>
+        <p class="stats-note">매물별 날짜 통계는 해당 날짜에 저장된 조회 기록을 표시합니다.</p>
+      </div>
     </dialog>
 
     <dialog class="admin-dialog" id="admin-dialog" aria-labelledby="admin-form-title">

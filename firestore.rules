@@ -30,6 +30,55 @@ service cloud.firestore {
       }
     }
 
+
+    match /neighborhoodNews/{newsId} {
+      allow read: if true;
+      allow create, update, delete: if isAdmin();
+      match /comments/{commentId} {
+        allow read: if true;
+        allow create: if request.resource.data.keys().hasOnly(['message','createdAt'])
+          && request.resource.data.message is string
+          && request.resource.data.message.size() > 0
+          && request.resource.data.message.size() <= 500
+          && request.resource.data.createdAt == request.time;
+        allow update: if false;
+        allow delete: if isAdmin();
+      }
+    }
+
+    // 관리자 오늘 현황: posts/comments와 neighborhoodNews/comments를
+    // collectionGroup("comments")로 한 번에 집계할 수 있도록 조회만 허용합니다.
+    // 댓글 생성/수정/삭제 권한은 기존 개별 규칙을 그대로 사용합니다.
+    match /{path=**}/comments/{commentId} {
+      allow list: if isAdmin();
+    }
+
+    match /dailyStats/{dateId} {
+      allow get: if isAdmin();
+      allow list: if false;
+
+      // 첫 방문 또는 첫 매물 조회로 일일 통계 문서를 만들 수 있습니다.
+      allow create: if (
+          request.resource.data.keys().hasOnly(['visitors'])
+          && request.resource.data.visitors == 1
+        ) || (
+          request.resource.data.keys().hasOnly(['postViews'])
+          && request.resource.data.postViews is map
+        );
+
+      // 방문자 수 증가 또는 매물별 조회수 증가만 허용합니다.
+      allow update: if (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['visitors'])
+          && request.resource.data.visitors is int
+          && request.resource.data.visitors == resource.data.visitors + 1
+        ) || (
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['postViews'])
+          && request.resource.data.postViews is map
+        );
+
+      allow delete: if isAdmin();
+    }
+
     match /listingInquiries/{inquiryId} {
       allow create: if request.auth != null
         && request.resource.data.ownerUid == request.auth.uid
@@ -96,7 +145,7 @@ service cloud.firestore {
       return data.keys().hasOnly([
           'title', 'location', 'propertyType', 'dealType', 'price', 'description',
           'area', 'rooms', 'bathrooms', 'imageUrl', 'createdAt', 'updatedAt',
-          'infoImageUrl', 'photoUrls', 'youtubeUrl', 'propertyTable', 'brokerTable', 'views'
+          'infoImageUrl', 'photoUrls', 'representativePhotoUrl', 'youtubeUrl', 'propertyTable', 'brokerTable', 'views', 'featured'
         ])
         && data.keys().hasAll([
           'title', 'location', 'propertyType', 'dealType', 'price', 'description',
@@ -115,10 +164,12 @@ service cloud.firestore {
         && (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 1000))
         && (!('infoImageUrl' in data) || (data.infoImageUrl is string && data.infoImageUrl.size() <= 1000))
         && (!('photoUrls' in data) || (data.photoUrls is list && data.photoUrls.size() <= 20))
+        && (!('representativePhotoUrl' in data) || (data.representativePhotoUrl is string && data.representativePhotoUrl.size() <= 1000))
         && (!('youtubeUrl' in data) || (data.youtubeUrl is string && data.youtubeUrl.size() <= 500))
         && (!('propertyTable' in data) || (data.propertyTable is list && data.propertyTable.size() <= 100))
         && (!('brokerTable' in data) || (data.brokerTable is list && data.brokerTable.size() <= 20))
-        && (!('views' in data) || (data.views is int && data.views >= 0));
+        && (!('views' in data) || (data.views is int && data.views >= 0))
+        && (!('featured' in data) || data.featured is bool);
     }
   }
 }

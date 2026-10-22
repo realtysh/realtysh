@@ -12,7 +12,10 @@ const privateComments = document.querySelector("#private-comments");
 const privateCommentList = document.querySelector("#private-comment-list");
 const privateCommentsStatus = document.querySelector("#private-comments-status");
 const privateCommentsAdminLabel = document.querySelector("#private-comments-admin-label");
-const postId = new URLSearchParams(window.location.search).get("id");
+const queryPostId = new URLSearchParams(window.location.search).get("id");
+const staticPostMatch = window.location.pathname.match(/^\/posts\/([^/]+)\.html$/i);
+const postId = queryPostId || (staticPostMatch ? decodeURIComponent(staticPostMatch[1]) : null);
+const isStaticSeoPage = Boolean(staticPostMatch);
 let database = null;
 let auth = null;
 let unsubscribePost = null;
@@ -90,18 +93,67 @@ function youtubeEmbedUrl(value) {
   return "";
 }
 
+function propertyPairs(value) {
+  const out = [];
+  normalizePropertyTable(value).forEach((row) => {
+    for (let i = 0; i < row.length - 1; i += 2) {
+      const name = String(row[i] || "").trim();
+      const val = String(row[i + 1] || "").trim();
+      if (name && val) out.push([name, val]);
+    }
+  });
+  return out;
+}
+
+function seoText(post) {
+  return [post.title, post.location, propertyTypes[post.propertyType], dealTypes[post.dealType], post.price, post.description, ...propertyPairs(post.propertyTable).flat()]
+    .filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
+}
+
+function setMeta(selector, value, attribute = "content") {
+  let el = document.querySelector(selector);
+  if (!el) {
+    el = document.createElement("meta");
+    const m = selector.match(/meta\[(name|property)="([^"]+)"\]/);
+    if (m) el.setAttribute(m[1], m[2]);
+    document.head.append(el);
+  }
+  el.setAttribute(attribute, value);
+}
+
+function updateSeo(post) {
+  const title = `${post.title || "시흥 부동산 매물"} | 현진부동산`;
+  const text = seoText(post) || "현진부동산 매물 상세정보입니다.";
+  const description = text.slice(0, 300);
+  const canonical = isStaticSeoPage ? `https://realtysh.com/posts/${encodeURIComponent(postId)}.html` : `https://realtysh.com/post.html?id=${encodeURIComponent(postId)}`;
+  const keywords = [...new Set([post.location, propertyTypes[post.propertyType], dealTypes[post.dealType], post.title, ...propertyPairs(post.propertyTable).flat()].filter(Boolean))].join(", ").slice(0, 1000);
+  const image = [post.representativePhotoUrl, ...(Array.isArray(post.photoUrls) ? post.photoUrls : []), post.imageUrl].map(safeImageUrl).find(Boolean);
+  document.title = title;
+  setMeta('meta[name="description"]', description);
+  setMeta('meta[name="keywords"]', keywords);
+  setMeta('meta[property="og:title"]', title);
+  setMeta('meta[property="og:description"]', description);
+  setMeta('meta[property="og:type"]', "website");
+  setMeta('meta[property="og:url"]', canonical);
+  if (image) setMeta('meta[property="og:image"]', image);
+  document.querySelector("#canonical-url").href = canonical;
+  let jsonLd = document.querySelector("#property-jsonld");
+  if (!jsonLd) { jsonLd = document.createElement("script"); jsonLd.type = "application/ld+json"; jsonLd.id = "property-jsonld"; document.head.append(jsonLd); }
+  jsonLd.textContent = JSON.stringify({
+    "@context": "https://schema.org", "@type": "RealEstateListing", name: post.title || "시흥 부동산 매물",
+    description, url: canonical, image: image ? [image] : [], address: post.location || "시흥시",
+    offers: { "@type": "Offer", priceSpecification: { "@type": "PriceSpecification", description: post.price || "가격 문의" } },
+    additionalProperty: propertyPairs(post.propertyTable).map(([name, value]) => ({ "@type": "PropertyValue", name, value }))
+  });
+}
+
 function formatPropertyTableValue(label, value) {
   const text = String(value ?? "").trim();
   if (!text) return text;
 
   if (label === "면적") {
-    // 기존 매물처럼 "타입103A/공급103.1/전용75.9"로 저장된 값도
-    // 상세 화면에서는 공급·전용 면적에 ㎡를 명확히 표시한다.
-    return text
-      .replace(/(공급\s*[:：]?\s*)(\d+(?:\.\d+)?)(?!\s*(?:㎡|m²|m2))/gi, "$1$2㎡")
-      .replace(/(전용\s*[:：]?\s*)(\d+(?:\.\d+)?)(?!\s*(?:㎡|m²|m2))/gi, "$1$2㎡")
-      .replace(/\s*\/\s*/g, " / ");
-  }
+  return text;
+}
 
   if (label === "주차대수") {
     const match = text.replace(/,/g, "").match(/^(?:총\s*)?(\d+)\s*(?:대)?$/);
@@ -123,11 +175,7 @@ function renderPost(post) {
     return;
   }
   postExists = true;
-  document.title = `${post.title || "시흥 부동산 매물"} | 현진부동산`;
-  document.querySelector('meta[name="description"]').content = `${post.location || "시흥시"} ${post.title || "부동산 매물"} ${post.price || ""}. ${post.description || "현진부동산 매물 상세정보입니다."}`;
-  document.querySelector('meta[property="og:title"]').content = `${post.title || "시흥 부동산 매물"} | 현진부동산`;
-  document.querySelector('meta[property="og:description"]').content = `${post.location || "시흥시"} ${post.title || "부동산 매물"} ${post.price || ""}. ${post.description || "현진부동산 매물 상세정보입니다."}`;
-  document.querySelector("#canonical-url").href = `https://realtysh.com/post.html?id=${encodeURIComponent(postId)}`;
+  updateSeo(post);
   const typeTag = document.createElement("span");
   typeTag.textContent = propertyTypes[post.propertyType] || "매물";
   const dealTag = document.createElement("span");
@@ -190,7 +238,11 @@ function renderPost(post) {
 
   const photoGallery = document.querySelector("#post-photo-gallery");
   photoGallery.replaceChildren();
-  const photos = Array.isArray(post.photoUrls) ? post.photoUrls : [];
+  const rawPhotos = Array.isArray(post.photoUrls) ? post.photoUrls : [];
+  const representative = safeImageUrl(post.representativePhotoUrl);
+  const photos = representative && rawPhotos.includes(post.representativePhotoUrl)
+    ? [post.representativePhotoUrl, ...rawPhotos.filter((url) => url !== post.representativePhotoUrl)]
+    : rawPhotos;
   photos.forEach((url, index) => appendImage(photoGallery, url, `${post.title || "매물"} 현장 사진 ${index + 1}`, "post-gallery-image"));
   if (!photos.length && post.imageUrl && post.imageUrl !== (post.infoImageUrl || (!hasPropertyTable ? post.imageUrl : ""))) {
     appendImage(photoGallery, post.imageUrl, `${post.title || "매물"} 사진`, "post-gallery-image");
@@ -216,7 +268,6 @@ function renderPost(post) {
     }
   };
 
-  document.title = `${post.title || "매물 게시글"} | 현진부동산`;
   postStatus.hidden = true;
   postDetail.hidden = false;
   commentsSection.hidden = false;
@@ -330,6 +381,32 @@ commentForm.addEventListener("submit", async (event) => {
   }
 });
 
+
+function getKoreaDateKey(date = new Date()) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Seoul",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(date);
+  const map = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${map.year}-${map.month}-${map.day}`;
+}
+
+async function recordDailyPostView() {
+  if (!database || !postId || isAdmin) return;
+  const dateKey = getKoreaDateKey();
+  try {
+    await database.collection("dailyStats").doc(dateKey).set({
+      postViews: {
+        [postId]: firebase.firestore.FieldValue.increment(1)
+      }
+    }, { merge: true });
+  } catch (error) {
+    console.error("날짜별 매물 조회수 증가에 실패했습니다.", error);
+  }
+}
+
 function connectPostPage() {
   if (!postId) {
     setPostStatus("게시글 주소가 올바르지 않습니다.");
@@ -385,6 +462,7 @@ function connectPostPage() {
 }).catch((error) => {
   console.error("조회수 증가에 실패했습니다.", error);
 });
+    recordDailyPostView();
       }
 });
     unsubscribePost = database.collection("posts").doc(postId).onSnapshot((snapshot) => {

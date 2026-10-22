@@ -1,7 +1,8 @@
-const searchForm = document.querySelector("#property-search");
+﻿const searchForm = document.querySelector("#property-search");
 const searchQuery = document.querySelector("#search-query");
 const searchDeal = document.querySelector("#search-deal");
-const filterButtons = [...document.querySelectorAll(".category-button")];
+const filterButtons = [...document.querySelectorAll(".category-button[data-filter]")];
+const featuredGrid = document.querySelector("#featured-grid");
 const propertyGrid = document.querySelector("#property-grid");
 const resultCount = document.querySelector("#result-count");
 const homesTitle = document.querySelector("#homes-title");
@@ -18,11 +19,7 @@ const savePostButton = document.querySelector("#save-post");
 const photosInput = postForm.elements.namedItem("photos");
 const existingPostMedia = document.querySelector("#existing-post-media");
 const selectedPhotoNames = document.querySelector("#selected-photo-names");
-const propertyTableInput = document.querySelector("#property-table-paste");
-const propertyTablePreviewWrap = document.querySelector("#property-table-preview-wrap");
-const propertyTablePreview = document.querySelector("#property-table-preview");
-const propertyTableStatus = document.querySelector("#property-table-status");
-const clearPropertyTableButton = document.querySelector("#clear-property-table");
+const newPhotoPreview = document.querySelector("#new-photo-preview");
 const brokerTablePreview = document.querySelector("#broker-table-preview");
 const legalAdStatus = document.querySelector("#legal-ad-status");
 const menuToggle = document.querySelector(".menu-toggle");
@@ -32,6 +29,22 @@ const postCreateButton = document.querySelector("#post-create");
 const homeView = document.querySelector("#home-view");
 const listingView = document.querySelector("#listing-view");
 const officeCardSection = document.querySelector("#contact");
+
+const naverBlogButton = document.querySelector(".naver-blog-button");
+const officeBrandRow = document.querySelector(".office-card-brand");
+if (naverBlogButton && officeBrandRow) {
+  naverBlogButton.classList.add("naver-blog-button-office");
+  officeBrandRow.append(naverBlogButton);
+}
+
+const adminTodayStats = document.querySelector("#admin-today-stats");
+const adminTodayVisitors = document.querySelector("#admin-today-visitors");
+const adminTodayComments = document.querySelector("#admin-today-comments");
+const statsDialog = document.querySelector("#stats-dialog");
+const statsDate = document.querySelector("#stats-date");
+const statsStatus = document.querySelector("#stats-status");
+const statsSummary = document.querySelector("#stats-summary");
+const statsList = document.querySelector("#stats-list");
 const postTypes = {
   all: "전체",
   apartment: "아파트",
@@ -54,7 +67,6 @@ let isAdmin = false;
 let selectedKind = "all";
 let editingPostId = null;
 let requestedEditHandled = false;
-let currentPropertyTable = [];
 let currentBrokerTable = [];
 const defaultBrokerTable = [
   ["상호(명칭)", "현진공인중개사사무소"],
@@ -95,19 +107,20 @@ function createPostCard(post) {
   card.className = "property-card";
   card.dataset.kind = post.propertyType;
   card.dataset.deal = post.dealType;
-  card.dataset.search = [post.title, post.location, post.description, postTypes[post.propertyType], dealTypes[post.dealType]]
+  card.dataset.search = [post.title, post.location, post.description, post.price, postTypes[post.propertyType], dealTypes[post.dealType], ...normalizePropertyTable(post.propertyTable).flat()]
     .filter(Boolean)
     .join(" ")
     .toLocaleLowerCase("ko");
 
   const detailLink = document.createElement("a");
   detailLink.className = "property-list-link";
-  detailLink.href = `post.html?id=${encodeURIComponent(post.id)}`;
+  detailLink.href = `posts/${encodeURIComponent(post.id)}.html`;
   detailLink.setAttribute("aria-label", `${post.title || "매물"} 상세 게시글 보기`);
+  detailLink.addEventListener("click", (event) => openPostWithDailyView(event, post.id, detailLink.href));
 
   const thumbnail = document.createElement("span");
   thumbnail.className = "property-thumbnail";
-  const imageUrl = [post.photoUrls?.[0], post.imageUrl]
+  const imageUrl = [post.representativePhotoUrl, post.photoUrls?.[0], post.imageUrl]
     .map(safeImageUrl)
     .find(Boolean);
   if (imageUrl) {
@@ -200,8 +213,118 @@ function showHome() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function renderFeaturedPosts() {
+  if (!featuredGrid) return;
+  const featured = posts.filter((post) => post.featured).slice(0, 8);
+
+  if (!featured.length) {
+    featuredGrid.innerHTML = '<p class="featured-empty">관리자가 추천매물을 선택하면 여기에 표시됩니다.</p>';
+    return;
+  }
+
+  // 시행령상 건축물 표시·광고 항목을 카드에서 확인하기 쉽게 압축 표시합니다.
+  // 값은 등록된 propertyTable에서만 가져오며, 없는 값은 임의로 만들지 않습니다.
+  const featuredLabelsByType = {
+    apartment: ["면적", "건축물 용도", "총 층수", "해당 층", "사용승인일 등", "방향", "방 수", "욕실 수", "입주 가능일", "주차대수", "관리비"],
+    house: ["면적", "건축물 용도", "총 층수", "해당 층", "사용승인일 등", "방향", "방 수", "욕실 수", "입주 가능일", "주차대수", "관리비"],
+    commercial: ["면적", "건축물 용도", "총 층수", "해당 층", "사용승인일 등", "방향", "욕실 수", "입주 가능일", "주차대수", "관리비"],
+    warehouse: ["면적", "건축물 용도", "총 층수", "해당 층", "사용승인일 등", "방향", "욕실 수", "입주 가능일", "주차대수", "관리비", "토지면적", "건물면적", "공장·창고 사양"],
+    land: ["면적", "지목", "용도지역", "도로접면"],
+    presale: ["면적", "분양 대상 종류", "단지·사업명", "입주 예정", "분양가", "프리미엄 P", "동·호/층 정보", "총 층수", "방향", "방 수", "욕실 수", "주차대수", "관리비"]
+  };
+
+  featuredGrid.replaceChildren(...featured.map((post) => {
+    const card = document.createElement("article");
+    card.className = "featured-card";
+
+    const link = document.createElement("a");
+    link.className = "featured-card-link";
+    link.href = `posts/${encodeURIComponent(post.id)}.html`;
+    link.setAttribute("aria-label", `${post.title || "추천매물"} 상세보기`);
+    link.addEventListener("click", (event) => openPostWithDailyView(event, post.id, link.href));
+
+    const photo = document.createElement("div");
+    photo.className = "featured-card-photo";
+    const imageUrl = [post.representativePhotoUrl, post.photoUrls?.[0], post.imageUrl].map(safeImageUrl).find(Boolean);
+    if (imageUrl) {
+      const image = document.createElement("img");
+      image.src = imageUrl;
+      image.alt = post.title || "추천매물";
+      image.loading = "lazy";
+      image.addEventListener("error", () => {
+        photo.replaceChildren(createTextElement("span", "property-placeholder", "사진 준비중"));
+      }, { once: true });
+      photo.append(image);
+    } else {
+      photo.append(createTextElement("span", "property-placeholder", "사진 준비중"));
+    }
+
+    const body = document.createElement("div");
+    body.className = "featured-card-body";
+
+    const meta = document.createElement("div");
+    meta.className = "featured-card-meta";
+    meta.append(
+      createTextElement("span", "featured-type-badge", postTypes[post.propertyType] || "매물"),
+      createTextElement("span", "featured-deal-badge", dealTypes[post.dealType] || "거래")
+    );
+
+    const title = createTextElement("h3", "featured-card-title", post.title || "제목 없는 매물");
+    const price = createTextElement("p", "featured-card-price", post.price || "가격 문의");
+
+    const table = normalizePropertyTable(post.propertyTable);
+    const valueByLabel = (label) => {
+      const row = table.find((entry) => String(entry[0] || "").trim() === label);
+      return String(row?.[1] || "").trim();
+    };
+
+    const legalInfo = document.createElement("div");
+    legalInfo.className = "featured-legal-info";
+
+    const legalSpecs = document.createElement("div");
+    legalSpecs.className = "featured-card-specs";
+
+    (featuredLabelsByType[post.propertyType] || ["면적"])
+      .forEach((label) => {
+        const value = valueByLabel(label);
+        if (!value) return;
+        const item = document.createElement("span");
+        item.className = "featured-spec";
+        item.append(
+          createTextElement("small", "", label),
+          document.createTextNode(value)
+        );
+        legalSpecs.append(item);
+      });
+
+    if (post.location) {
+      const locationSpec = document.createElement("span");
+      locationSpec.className = "featured-spec";
+      locationSpec.append(
+        createTextElement("small", "", "소재지"),
+        document.createTextNode(post.location)
+      );
+      legalSpecs.append(locationSpec);
+    }
+
+    if (legalSpecs.childElementCount) legalInfo.append(legalSpecs);
+
+    // 중개사무소 표시사항도 카드 하단에 작고 읽기 쉽게 함께 표시합니다.
+    const brokerLine = createTextElement(
+      "p",
+      "featured-broker-line",
+      "현진공인중개사사무소 · 경기도 시흥시 신천로 100번길 36(신천동 782) · 010-3664-1861 / 031-313-1862 · 등록번호 41390-2024-00025 · 대표 정선진"
+    );
+
+    body.append(meta, title, price, legalInfo, brokerLine);
+    link.append(photo, body);
+    card.append(link);
+    return card;
+  }));
+}
 function renderPosts() {
   propertyGrid.replaceChildren(...posts.map(createPostCard));
+  renderFeaturedPosts();
   updateListings();
   handleRequestedEdit();
 }
@@ -210,7 +333,162 @@ function updateAdminControls() {
   adminAccess.textContent = isAdmin ? "관리자 로그아웃" : "관리자 로그인";
   postCreateButton.hidden = !isAdmin;
   if (inquiryManageButton) inquiryManageButton.hidden = !isAdmin;
+  const newsCreateControl = document.querySelector("#news-create");
+  if (newsCreateControl) newsCreateControl.hidden = !isAdmin;
+  if (adminTodayStats) adminTodayStats.hidden = !isAdmin;
+  if (isAdmin) loadAdminTodayStats();
   renderPosts();
+  if (typeof renderNeighborhoodNews === "function") renderNeighborhoodNews();
+}
+
+function getKoreaDateKey(date = new Date()) {
+  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).format(date);
+}
+
+function getKoreaDayStart() {
+  const now = new Date();
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit" }).formatToParts(now);
+  const value = Object.fromEntries(parts.filter(p => p.type !== "literal").map(p => [p.type, p.value]));
+  // Korea is UTC+9; midnight KST is 15:00 UTC on the previous date.
+  return new Date(Date.UTC(Number(value.year), Number(value.month) - 1, Number(value.day) - 1, 15, 0, 0));
+}
+
+async function recordTodayVisit() {
+  if (!database) return;
+  const dateKey = getKoreaDateKey();
+  const storageKey = `hyunjin-visit-${dateKey}`;
+  if (localStorage.getItem(storageKey)) return;
+  const ref = database.collection("dailyStats").doc(dateKey);
+  try {
+    await database.runTransaction(async tx => {
+      const snap = await tx.get(ref);
+      if (snap.exists) tx.update(ref, { visitors: (Number(snap.data().visitors) || 0) + 1 });
+      else tx.set(ref, { visitors: 1 });
+    });
+    localStorage.setItem(storageKey, "1");
+  } catch (error) {
+    console.warn("오늘 방문자 집계를 건너뜁니다.", error);
+  }
+}
+
+
+async function recordDailyPostView(postId) {
+  if (!database || !postId || isAdmin) return;
+  const dateKey = getKoreaDateKey();
+  const ref = database.collection("dailyStats").doc(dateKey);
+
+  try {
+    await ref.set({
+      postViews: {
+        [postId]: firebase.firestore.FieldValue.increment(1)
+      }
+    }, { merge: true });
+  } catch (error) {
+    console.warn("매물별 날짜 조회수 기록을 건너뜁니다.", error);
+  }
+}
+
+async function openPostWithDailyView(event, postId, href) {
+  if (isAdmin) return;
+  event.preventDefault();
+  await recordDailyPostView(postId);
+  window.location.href = href;
+}
+
+async function loadAdminTodayStats() {
+  if (!database || !isAdmin || !adminTodayStats) return;
+
+  adminTodayVisitors.textContent = "-";
+  adminTodayComments.textContent = "-";
+
+  const dateKey = getKoreaDateKey();
+  const dayStart = firebase.firestore.Timestamp.fromDate(getKoreaDayStart());
+
+  // 오늘 방문자 수
+  try {
+    const statsSnap = await database.collection("dailyStats").doc(dateKey).get();
+    adminTodayVisitors.textContent = String(
+      statsSnap.exists ? (Number(statsSnap.data().visitors) || 0) : 0
+    );
+  } catch (error) {
+    console.warn("오늘 방문자 수를 불러오지 못했습니다.", error);
+    adminTodayVisitors.textContent = "확인 실패";
+  }
+
+  // 오늘 댓글 수
+  try {
+    const commentsSnap = await database
+      .collectionGroup("comments")
+      .where("createdAt", ">=", dayStart)
+      .get();
+
+    adminTodayComments.textContent = String(commentsSnap.size || 0);
+  } catch (error) {
+    console.warn("오늘 댓글 수를 불러오지 못했습니다.", error);
+    adminTodayComments.textContent = "확인 실패";
+  }
+}
+
+function getKoreaDateRange(dateKey) {
+  const [year, month, day] = String(dateKey).split("-").map(Number);
+  const start = new Date(Date.UTC(year, month - 1, day - 1, 15, 0, 0));
+  const end = new Date(start.getTime() + 86400000);
+  return { start: firebase.firestore.Timestamp.fromDate(start), end: firebase.firestore.Timestamp.fromDate(end) };
+}
+
+function extractDailyPostViews(data = {}) {
+  const candidates = [data.postViews, data.propertyViews, data.listingViews, data.viewsByPost, data.views];
+  const map = candidates.find(value => value && typeof value === "object" && !Array.isArray(value));
+  if (!map) return [];
+  return Object.entries(map).map(([postId, value]) => ({ postId, views: Number(value) || 0 }))
+    .filter(item => item.views > 0).sort((a, b) => b.views - a.views);
+}
+
+async function loadStatsForDate(dateKey) {
+  if (!database || !isAdmin || !statsStatus || !statsSummary || !statsList) return;
+  statsStatus.textContent = "통계를 불러오는 중입니다.";
+  statsSummary.replaceChildren(); statsList.replaceChildren();
+  try {
+    const range = getKoreaDateRange(dateKey);
+    const [statsSnap, commentsSnap] = await Promise.all([
+      database.collection("dailyStats").doc(dateKey).get(),
+      database.collectionGroup("comments").where("createdAt", ">=", range.start).where("createdAt", "<", range.end).get()
+    ]);
+    const data = statsSnap.exists ? statsSnap.data() : {};
+    const visitors = Number(data.visitors) || 0;
+    const comments = commentsSnap.size || 0;
+    const dailyViews = extractDailyPostViews(data);
+    const cards = [["방문자", visitors + "명"], ["댓글", comments + "개"], ["매물 조회", dailyViews.reduce((s,x)=>s+x.views,0) + "회"]];
+    cards.forEach(([label,value]) => {
+      const card=document.createElement("div"); card.className="stats-summary-card";
+      const small=document.createElement("small"); small.textContent=label;
+      const strong=document.createElement("strong"); strong.textContent=value;
+      card.append(small,strong); statsSummary.append(card);
+    });
+    if (!dailyViews.length) {
+      const empty=document.createElement("p"); empty.className="stats-empty";
+      empty.textContent="이 날짜에 저장된 매물별 조회 기록이 없습니다."; statsList.append(empty);
+    } else {
+      dailyViews.forEach((item,index) => {
+        const post=posts.find(entry=>entry.id===item.postId);
+        const row=document.createElement("div"); row.className="stats-list-row";
+        const rank=document.createElement("span"); rank.className="stats-rank"; rank.textContent=String(index+1);
+        const title=document.createElement("strong"); title.textContent=post?.title || ("매물 " + item.postId);
+        const count=document.createElement("b"); count.textContent=item.views + "회";
+        row.append(rank,title,count); statsList.append(row);
+      });
+    }
+    statsStatus.textContent=dateKey + " 통계";
+  } catch (error) {
+    console.error("날짜별 통계를 불러오지 못했습니다.", error);
+    statsStatus.textContent="통계를 불러오지 못했습니다. Firestore 규칙을 확인해 주세요.";
+  }
+}
+
+function openStatsDialog() {
+  if (!isAdmin || !statsDialog || !statsDate) return;
+  statsDate.value = statsDate.value || getKoreaDateKey();
+  statsDialog.showModal(); loadStatsForDate(statsDate.value);
 }
 
 function connectAdminAuth() {
@@ -254,11 +532,8 @@ function openPostForm(post = null) {
   editingPostId = post?.id || null;
   postForm.reset();
   postFormStatus.textContent = "";
-  propertyTableStatus.textContent = "";
   legalAdStatus.textContent = "";
-  currentPropertyTable = [];
   currentBrokerTable = post ? normalizePropertyTable(post.brokerTable) : normalizePropertyTable(defaultBrokerTable);
-  renderPropertyTablePreview();
   renderBrokerTablePreview();
   postFormTitle.textContent = editingPostId ? "게시글 수정" : "매물 게시글 등록";
   setLegalFieldVisibility();
@@ -266,31 +541,44 @@ function openPostForm(post = null) {
   existingPostMedia.replaceChildren();
   existingPostMedia.hidden = true;
   selectedPhotoNames.textContent = "선택한 사진이 없습니다.";
+  newPhotoPreview.replaceChildren();
+  newPhotoPreview.hidden = true;
 
   if (post) {
     Object.entries(post).forEach(([key, value]) => {
       const field = postForm.elements.namedItem(key);
       if (field && typeof value === "string") field.value = value;
+      if (key === "featured" && field) field.checked = Boolean(value);
     });
-    currentPropertyTable = stripLegalRows(normalizePropertyTable(post.propertyTable));
     fillLegalFieldsFromTable(post.propertyTable);
     setLegalFieldVisibility();
-    renderPropertyTablePreview();
-    const existingPhotos = Array.isArray(post.photoUrls) ? post.photoUrls : [];
+      const existingPhotos = Array.isArray(post.photoUrls) ? post.photoUrls : [];
     if (existingPhotos.length) {
       existingPostMedia.hidden = false;
+      const currentRepresentative = post.representativePhotoUrl || existingPhotos[0] || "";
       existingPhotos.forEach((url, index) => {
-        const label = document.createElement("label");
-        label.className = "existing-photo-option";
+        const card = document.createElement("div");
+        card.className = "existing-photo-option";
+        const image = document.createElement("img");
+        image.src = safeImageUrl(url);
+        image.alt = `기존 현장 사진 ${index + 1}`;
+        const representativeLabel = document.createElement("label");
+        representativeLabel.className = "photo-choice";
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = "representativePhoto";
+        radio.value = `existing:${url}`;
+        radio.checked = url === currentRepresentative;
+        representativeLabel.append(radio, document.createTextNode("대표사진"));
+        const removeLabel = document.createElement("label");
+        removeLabel.className = "photo-choice photo-remove-choice";
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
         checkbox.name = "removePhoto";
         checkbox.value = url;
-        const image = document.createElement("img");
-        image.src = safeImageUrl(url);
-        image.alt = `기존 현장 사진 ${index + 1}`;
-        label.append(checkbox, image, createTextElement("span", "", "삭제"));
-        existingPostMedia.append(label);
+        removeLabel.append(checkbox, document.createTextNode("삭제"));
+        card.append(image, representativeLabel, removeLabel);
+        existingPostMedia.append(card);
       });
     }
   }
@@ -360,6 +648,10 @@ window.addEventListener("popstate", () => {
 });
 
 if (window.location.hash === "#homes") showListings("all");
+
+adminTodayStats?.addEventListener("click", openStatsDialog);
+document.querySelector("#close-stats-dialog")?.addEventListener("click", () => statsDialog?.close());
+statsDate?.addEventListener("change", () => { if (statsDate.value) loadStatsForDate(statsDate.value); });
 
 postCreateButton.addEventListener("click", () => openPostForm());
 
@@ -497,25 +789,6 @@ function validatePropertyTable(table) {
   return "";
 }
 
-function renderPropertyTablePreview() {
-  propertyTablePreview.replaceChildren();
-  propertyTablePreviewWrap.hidden = currentPropertyTable.length === 0;
-  currentPropertyTable.forEach((row, rowIndex) => {
-    const tableRow = document.createElement("tr");
-    row.forEach((value, columnIndex) => {
-      const cell = document.createElement(columnIndex % 2 === 0 ? "th" : "td");
-      cell.textContent = value;
-      cell.contentEditable = "true";
-      cell.spellcheck = false;
-      cell.dataset.row = String(rowIndex);
-      cell.dataset.column = String(columnIndex);
-      cell.setAttribute("aria-label", `${rowIndex + 1}행 ${columnIndex + 1}열`);
-      tableRow.append(cell);
-    });
-    propertyTablePreview.append(tableRow);
-  });
-}
-
 function renderBrokerTablePreview() {
   brokerTablePreview.replaceChildren();
   currentBrokerTable.forEach((row, rowIndex) => {
@@ -534,30 +807,10 @@ function renderBrokerTablePreview() {
   });
 }
 
-propertyTableInput.addEventListener("input", () => {
-  currentPropertyTable = parsePastedPropertyTable(propertyTableInput.value);
-  renderPropertyTablePreview();
-  propertyTableStatus.textContent = validatePropertyTable(currentPropertyTable);
-});
-
 brokerTablePreview.addEventListener("input", (event) => {
   const cell = event.target.closest("[data-row][data-column]");
   if (!cell) return;
   currentBrokerTable[Number(cell.dataset.row)][Number(cell.dataset.column)] = cell.textContent;
-});
-
-propertyTablePreview.addEventListener("input", (event) => {
-  const cell = event.target.closest("[data-row][data-column]");
-  if (!cell) return;
-  currentPropertyTable[Number(cell.dataset.row)][Number(cell.dataset.column)] = cell.textContent;
-  propertyTableStatus.textContent = validatePropertyTable(currentPropertyTable);
-});
-
-clearPropertyTableButton.addEventListener("click", () => {
-  propertyTableInput.value = "";
-  currentPropertyTable = [];
-  propertyTableStatus.textContent = "";
-  renderPropertyTablePreview();
 });
 
 const legalManagedLabels = new Set([
@@ -596,14 +849,14 @@ function tableValue(table, label) {
 }
 
 function fillLegalFieldsFromTable(table) {
-  const mapping={legalArea:"면적",landCategory:"지목",zoning:"용도지역",roadAccess:"도로접면",siteArea:"토지면적",buildingArea:"건물면적",factorySpecs:"공장·창고 사양",presaleUse:"분양 대상 종류",complexName:"단지·사업명",expectedMoveIn:"입주 예정",salePrice:"분양가",premium:"프리미엄 P",unitInfo:"동·호/층 정보"};
+  const mapping={legalArea:"면적",landCategory:"지목",zoning:"용도지역",roadAccess:"도로접면",siteArea:"토지면적",buildingArea:"건물면적",factorySpecs:"공장·창고 사양",presaleUse:"분양 대상 종류",complexName:"단지·사업명",expectedMoveIn:"입주 예정",salePrice:"분양가",premium:"프리미엄 P",unitInfo:"동·호/층 정보",presaleTotalFloors:"총 층수",presaleRoomCount:"방 수",presaleBathroomCount:"욕실 수",presaleParking:"주차대수",presaleManagementFee:"관리비"};
   Object.entries(mapping).forEach(([name,label])=>{const f=postForm.elements.namedItem(name);if(f)f.value=tableValue(table,label);});
   const residential={buildingUse:"건축물 용도",totalFloors:"총 층수",currentFloor:"해당 층",approvalDate:"사용승인일 등",roomCount:"방 수",bathroomCount:"욕실 수",moveInDate:"입주 가능일",parking:"주차대수",managementFee:"관리비",managementFeeDetails:"관리비 세부내역"};
   const nonres={nonresBuildingUse:"건축물 용도",nonresTotalFloors:"총 층수",nonresCurrentFloor:"해당 층",nonresApprovalDate:"사용승인일 등",nonresRoomCount:"방 수",nonresBathroomCount:"욕실 수",nonresMoveInDate:"입주 가능일",nonresParking:"주차대수",nonresManagementFee:"관리비"};
   [residential,nonres].forEach(m=>Object.entries(m).forEach(([name,label])=>{const f=postForm.elements.namedItem(name);if(f)f.value=tableValue(table,label);}));
   const directionText=tableValue(table,"방향"); const dm=directionText.match(/^(동향|서향|남향|북향|북동향|남동향|남서향|북서향)(?:\s*\((.+)\))?$/);
-  ["direction","nonresDirection"].forEach(n=>{const f=postForm.elements.namedItem(n);if(f)f.value=dm?.[1]||"";});
-  ["directionBasis","nonresDirectionBasis"].forEach(n=>{const f=postForm.elements.namedItem(n);if(f)f.value=dm?.[2]||"";});
+  ["direction","nonresDirection","presaleDirection"].forEach(n=>{const f=postForm.elements.namedItem(n);if(f)f.value=dm?.[1]||"";});
+  ["directionBasis","nonresDirectionBasis","presaleDirectionBasis"].forEach(n=>{const f=postForm.elements.namedItem(n);if(f)f.value=dm?.[2]||"";});
 }
 
 function stripLegalRows(table) { return normalizePropertyTable(table).filter(row => !legalManagedLabels.has((row[0]||"").trim())); }
@@ -615,30 +868,50 @@ function validateSquareMeters(value,label="면적") {
   return "";
 }
 
+function normalizeSqmValue(value) {
+  const text=String(value||"").trim();
+  if(!text) return "";
+  return /(㎡|m²|m2)/i.test(text) ? text : `${text}㎡`;
+}
+
 function validateLegalAd(fd) {
   const type=fd.get("propertyType"), group=(legalTypeConfig[type]||legalTypeConfig.other).group;
+
+  // 기존 공장·창고 매물은 별도 '면적' 칸이 비어 있어도
+  // 토지면적/건물면적이 있으면 그것을 법정 면적 정보로 인정한다.
+  if(group==="warehouse" && !(fd.get("legalArea")||"").trim()) {
+    const site=normalizeSqmValue(fd.get("siteArea"));
+    const building=normalizeSqmValue(fd.get("buildingArea"));
+    if(site || building) fd.set("legalArea", [site&&`토지 ${site}`, building&&`건물 ${building}`].filter(Boolean).join(" / "));
+  }
+  // 토지는 토지면적이 있으면 별도 면적 칸을 다시 입력하지 않아도 된다.
+  if(group==="land" && !(fd.get("legalArea")||"").trim()) {
+    const site=normalizeSqmValue(fd.get("siteArea"));
+    if(site) fd.set("legalArea", site);
+  }
+
   let err=validateSquareMeters(fd.get("legalArea"),"면적"); if(err)return err;
   if(!fd.get("legalAdConfirmed")) return "표시·광고 내용 확인란에 체크해 주세요.";
   const price=(fd.get("price")||"").trim(); if(/문의|협의|부터|이상|이하|~|∼/.test(price)) return "가격은 '문의/협의/범위'가 아닌 현재 거래예정 단일가격으로 입력해 주세요.";
   if(group==="land") return requiredValue(fd,"landCategory","지목");
   if(group==="warehouse") {
     for (const [name,label] of [["siteArea","토지면적"],["buildingArea","건물면적"]]) {
-      const v=(fd.get(name)||"").trim();
-      if(v){ err=validateSquareMeters(v,label); if(err)return err; }
+      const v=normalizeSqmValue(fd.get(name));
+      if(v){ fd.set(name,v); err=validateSquareMeters(v,label); if(err)return err; }
     }
   }
   if(group==="presale") { for(const x of [["presaleUse","분양 대상 종류"],["complexName","단지·사업명"],["expectedMoveIn","입주 예정"]]){err=requiredValue(fd,...x);if(err)return err;} return ""; }
   const prefix=group==="residential"?"":"nonres";
   const names=group==="residential"?
     [["buildingUse","건축물 용도"],["totalFloors","총 층수"],["currentFloor","해당 층"],["approvalDate","사용승인일 등"],["roomCount","방 수"],["bathroomCount","욕실 수"],["moveInDate","입주 가능일"],["parking","주차대수"],["managementFee","관리비"],["direction","방향"],["directionBasis","방향 기준"]]:
-    [["nonresBuildingUse","건축물 용도"],["nonresTotalFloors","총 층수"],["nonresCurrentFloor","해당 층"],["nonresApprovalDate","사용승인일 등"],["nonresRoomCount","방 수"],["nonresBathroomCount","욕실 수"],["nonresMoveInDate","입주 가능일"],["nonresParking","주차대수"],["nonresDirection","방향"],["nonresDirectionBasis","방향 기준"]];
+    [["nonresBuildingUse","건축물 용도"],["nonresTotalFloors","총 층수"],["nonresCurrentFloor","해당 층"],["nonresApprovalDate","사용승인일 등"],["nonresBathroomCount","욕실 수"],["nonresMoveInDate","입주 가능일"],["nonresParking","주차대수"],["nonresDirection","방향"],["nonresDirectionBasis","방향 기준"]];
   for(const x of names){err=requiredValue(fd,...x);if(err)return err;} return "";
 }
 
 function buildLegalRows(fd) {
   const type=fd.get("propertyType"), group=(legalTypeConfig[type]||legalTypeConfig.other).group, rows=[["면적",(fd.get("legalArea")||"").trim()]];
   if(group==="land") rows.push(["지목",fd.get("landCategory")||""],["용도지역",fd.get("zoning")||""],["도로접면",fd.get("roadAccess")||""]);
-  else if(group==="presale") rows.push(["분양 대상 종류",fd.get("presaleUse")||""],["단지·사업명",fd.get("complexName")||""],["입주 예정",fd.get("expectedMoveIn")||""],["분양가",fd.get("salePrice")||""],["프리미엄 P",fd.get("premium")||""],["동·호/층 정보",fd.get("unitInfo")||""]);
+  else if(group==="presale") rows.push(["분양 대상 종류",fd.get("presaleUse")||""],["단지·사업명",fd.get("complexName")||""],["입주 예정",fd.get("expectedMoveIn")||""],["분양가",fd.get("salePrice")||""],["프리미엄 P",fd.get("premium")||""],["동·호/층 정보",fd.get("unitInfo")||""],["총 층수",fd.get("presaleTotalFloors")||""],["방향",(fd.get("presaleDirection")||"") ? `${fd.get("presaleDirection")} (${fd.get("presaleDirectionBasis")||"기준 미입력"})` : ""],["방 수",fd.get("presaleRoomCount")||""],["욕실 수",fd.get("presaleBathroomCount")||""],["주차대수",fd.get("presaleParking")||""],["관리비",fd.get("presaleManagementFee")||""]);
   else {
     const pre=group==="residential"?"":"nonres"; const get=n=>fd.get(pre+n)||"";
     rows.push(["건축물 용도",get(group==="residential"?"buildingUse":"BuildingUse")],["총 층수",get(group==="residential"?"totalFloors":"TotalFloors")],["해당 층",get(group==="residential"?"currentFloor":"CurrentFloor")],["사용승인일 등",get(group==="residential"?"approvalDate":"ApprovalDate")],["방 수",get(group==="residential"?"roomCount":"RoomCount")],["욕실 수",get(group==="residential"?"bathroomCount":"BathroomCount")],["입주 가능일",get(group==="residential"?"moveInDate":"MoveInDate")],["주차대수",get(group==="residential"?"parking":"Parking")],["관리비",get(group==="residential"?"managementFee":"ManagementFee")],...(group==="residential" && (fd.get("managementFeeDetails")||"").trim() ? [["관리비 세부내역",fd.get("managementFeeDetails")]] : []),["방향",`${get(group==="residential"?"direction":"Direction")} (${get(group==="residential"?"directionBasis":"DirectionBasis")})`]);
@@ -694,6 +967,7 @@ postForm.addEventListener("submit", async (event) => {
   legalAdStatus.textContent = invalidLegalAd;
   if (invalidLegalAd) return;
   const photoFiles = [...photosInput.files];
+  const representativeChoice = formData.get("representativePhoto") || "";
   const currentPost = editingPostId ? posts.find((post) => post.id === editingPostId) : null;
   const removedPhotos = new Set(formData.getAll("removePhoto"));
   const currentPhotoUrls = Array.isArray(currentPost?.photoUrls) ? currentPost.photoUrls : [];
@@ -701,11 +975,6 @@ postForm.addEventListener("submit", async (event) => {
   const invalidPhotos = validateImageFiles(photoFiles, Math.max(0, 20 - keptPhotoCount));
   if (invalidPhotos) {
     postFormStatus.textContent = invalidPhotos;
-    return;
-  }
-  const invalidPropertyTable = validatePropertyTable(currentPropertyTable);
-  if (invalidPropertyTable) {
-    propertyTableStatus.textContent = invalidPropertyTable;
     return;
   }
   const youtubeUrl = formData.get("youtubeUrl").trim();
@@ -718,6 +987,15 @@ postForm.addEventListener("submit", async (event) => {
       return;
     }
   }
+  const wantsFeatured = formData.get("featured") === "on";
+  if (wantsFeatured) {
+    const otherFeaturedCount = posts.filter((post) => post.featured && post.id !== editingPostId).length;
+    if (otherFeaturedCount >= 8) {
+      postFormStatus.textContent = "추천매물은 최대 8개입니다. 기존 추천매물의 체크를 먼저 해제해 주세요.";
+      alert("추천매물 8개를 초과했습니다. 기존 추천매물의 체크를 먼저 해제해 주세요.");
+      return;
+    }
+  }
   const postData = {
     title: formData.get("title").trim(),
     propertyType: formData.get("propertyType"),
@@ -727,8 +1005,9 @@ postForm.addEventListener("submit", async (event) => {
     description: formData.get("description").trim(),
     youtubeUrl,
     photoUrls: currentPhotoUrls,
-    propertyTable: serializePropertyTable([...buildLegalRows(formData), ...normalizePropertyTable(currentPropertyTable)]),
-    brokerTable: serializePropertyTable(normalizePropertyTable(currentBrokerTable))
+    propertyTable: serializePropertyTable(buildLegalRows(formData)),
+    brokerTable: serializePropertyTable(normalizePropertyTable(currentBrokerTable)),
+    featured: wantsFeatured
   };
   postData.photoUrls = postData.photoUrls.filter((url) => !removedPhotos.has(url));
 
@@ -739,11 +1018,19 @@ postForm.addEventListener("submit", async (event) => {
     const postReference = editingPostId
       ? database.collection("posts").doc(editingPostId)
       : database.collection("posts").doc();
+    const uploadedUrls = [];
     for (const file of photoFiles) {
       postFormStatus.textContent = `사진 업로드 중입니다... (${file.name})`;
-      postData.photoUrls.push(await uploadImage(file));
+      const uploadedUrl = await uploadImage(file);
+      uploadedUrls.push(uploadedUrl);
+      postData.photoUrls.push(uploadedUrl);
     }
-    postData.imageUrl = postData.photoUrls[0] || (currentPhotoUrls.length ? "" : currentPost?.imageUrl || "");
+    let representativePhotoUrl = "";
+    if (representativeChoice.startsWith("existing:")) representativePhotoUrl = representativeChoice.slice(9);
+    if (representativeChoice.startsWith("new:")) representativePhotoUrl = uploadedUrls[Number(representativeChoice.slice(4))] || "";
+    if (!postData.photoUrls.includes(representativePhotoUrl)) representativePhotoUrl = postData.photoUrls[0] || "";
+    postData.representativePhotoUrl = representativePhotoUrl;
+    postData.imageUrl = representativePhotoUrl || (currentPhotoUrls.length ? "" : currentPost?.imageUrl || "");
     const timestamp = firebase.firestore.FieldValue.serverTimestamp();
     if (editingPostId) {
       await postReference.update({
@@ -783,6 +1070,13 @@ postForm.addEventListener("submit", async (event) => {
   }
 });
 
+postForm.addEventListener("invalid", (event) => {
+  const field = event.target;
+  if (!(field instanceof HTMLElement)) return;
+  postFormStatus.textContent = "필수 입력항목을 확인해 주세요. 입력이 필요한 칸으로 이동했습니다.";
+  setTimeout(() => field.focus(), 0);
+}, true);
+
 menuToggle.addEventListener("click", () => {
   const isOpen = menuToggle.getAttribute("aria-expanded") === "true";
   menuToggle.setAttribute("aria-expanded", String(!isOpen));
@@ -810,8 +1104,10 @@ async function connectFirebase() {
   try {
     if (firebase.apps.length === 0) firebase.initializeApp(config);
     database = firebase.firestore();
+    recordTodayVisit();
     auth = firebase.auth();
     connectAdminAuth();
+    connectNeighborhoodNews();
     database.collection("posts").orderBy("createdAt", "desc").onSnapshot((snapshot) => {
       posts = snapshot.docs.map((document) => ({ id: document.id, ...document.data() }));
       renderPosts();
@@ -988,3 +1284,53 @@ function renderMyInquiry(doc) {
 
 
 connectFirebase();
+
+
+// Neighborhood news: admin-written local posts + public comments
+const neighborhoodDialog = document.querySelector("#neighborhood-dialog");
+const openNeighborhoodButton = document.querySelector("#open-neighborhood-news");
+const closeNeighborhoodButton = document.querySelector("#close-neighborhood");
+const newsCreateButton = document.querySelector("#news-create");
+const newsForm = document.querySelector("#news-form");
+const cancelNewsButton = document.querySelector("#cancel-news");
+const newsList = document.querySelector("#news-list");
+const newsStatus = document.querySelector("#news-status");
+let neighborhoodNews = [];
+
+openNeighborhoodButton?.addEventListener("click", () => neighborhoodDialog?.showModal());
+closeNeighborhoodButton?.addEventListener("click", () => neighborhoodDialog?.close());
+newsCreateButton?.addEventListener("click", () => { newsForm.hidden = false; newsForm.querySelector('input')?.focus(); });
+cancelNewsButton?.addEventListener("click", () => { newsForm.reset(); newsForm.hidden = true; });
+
+function formatNewsDate(value) { try { return value?.toDate?.().toLocaleDateString("ko-KR") || ""; } catch { return ""; } }
+function renderNeighborhoodNews() {
+  if (!newsList) return;
+  if (!neighborhoodNews.length) { newsList.innerHTML = '<p class="news-empty">등록된 우리동네 소식이 없습니다.</p>'; return; }
+  newsList.replaceChildren(...neighborhoodNews.map((item) => {
+    const article=document.createElement("article"); article.className="news-item";
+    const head=document.createElement("div"); head.className="news-item-head";
+    const title=document.createElement("h3"); title.textContent=item.title;
+    const date=document.createElement("time"); date.textContent=formatNewsDate(item.createdAt); head.append(title,date);
+    const body=document.createElement("p"); body.className="news-content"; body.textContent=item.content;
+    const comments=document.createElement("div"); comments.className="news-comments";
+    const commentsTitle=document.createElement("strong"); commentsTitle.textContent="댓글";
+    const commentList=document.createElement("div"); commentList.className="news-comment-list"; commentList.textContent="댓글을 불러오는 중입니다.";
+    database.collection("neighborhoodNews").doc(item.id).collection("comments").orderBy("createdAt","asc").onSnapshot((snap)=>{
+      commentList.replaceChildren(...snap.docs.map((d)=>{const row=document.createElement("p"); row.textContent=d.data().message; return row;}));
+      if(!snap.size) commentList.textContent="첫 댓글을 남겨보세요.";
+    });
+    const form=document.createElement("form"); form.className="news-comment-form";
+    const input=document.createElement("input"); input.required=true; input.maxLength=500; input.placeholder="댓글을 입력하세요";
+    const button=document.createElement("button"); button.type="submit"; button.textContent="댓글 등록"; form.append(input,button);
+    form.addEventListener("submit",async(e)=>{e.preventDefault(); const message=input.value.trim(); if(!message)return; button.disabled=true; try{await database.collection("neighborhoodNews").doc(item.id).collection("comments").add({message,createdAt:firebase.firestore.FieldValue.serverTimestamp()});input.value="";}catch(err){console.error(err);alert("댓글을 등록하지 못했습니다.");}finally{button.disabled=false;}});
+    comments.append(commentsTitle,commentList,form); article.append(head,body,comments);
+    if(isAdmin){const del=document.createElement("button");del.className="news-delete admin-only";del.textContent="소식 삭제";del.addEventListener("click",async()=>{if(confirm("이 소식을 삭제할까요?")) await database.collection("neighborhoodNews").doc(item.id).delete();});article.append(del);}
+    return article;
+  }));
+}
+function connectNeighborhoodNews(){
+  if(!database)return;
+  database.collection("neighborhoodNews").orderBy("createdAt","desc").onSnapshot((snapshot)=>{neighborhoodNews=snapshot.docs.map(d=>({id:d.id,...d.data()}));renderNeighborhoodNews();},(err)=>{console.error(err);if(newsList)newsList.textContent="우리동네 소식을 불러오지 못했습니다.";});
+}
+newsForm?.addEventListener("submit",async(e)=>{e.preventDefault();if(!database||!isAdmin)return;const fd=new FormData(newsForm);newsStatus.textContent="등록 중입니다.";try{await database.collection("neighborhoodNews").add({title:fd.get("title").trim(),content:fd.get("content").trim(),createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});newsForm.reset();newsForm.hidden=true;newsStatus.textContent="";}catch(err){console.error(err);newsStatus.textContent="등록하지 못했습니다.";}});
+
