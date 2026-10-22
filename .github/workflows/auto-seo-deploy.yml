@@ -46,7 +46,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add posts sitemap.xml
-            git commit -m "자동 SEO 갱신"
+            git commit -m "?�동 SEO 갱신"
             git push
           else
             echo "SEO files are already current."
@@ -55,10 +55,10 @@ jobs:
       - name: Create Firebase service account file
         shell: bash
         env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_REALTYSH }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
         run: |
           if [[ -z "$FIREBASE_SERVICE_ACCOUNT" ]]; then
-            echo "Missing GitHub secret: FIREBASE_SERVICE_ACCOUNT_REALTYSH"
+            echo "Missing GitHub secret: FIREBASE_SERVICE_ACCOUNT"
             exit 1
           fi
           printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
