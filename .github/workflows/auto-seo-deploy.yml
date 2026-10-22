@@ -2,7 +2,7 @@
 
 on:
   schedule:
-    # GitHub Actions cron uses UTC. Every 15 minutes.
+    # GitHub Actions cron uses UTC. Every 15 minutes. Automation verified 2026-10-22.
     - cron: '*/15 * * * *'
   workflow_dispatch:
   push:
