@@ -1,0 +1,69 @@
+name: Auto SEO and Firebase Deploy
+
+on:
+  schedule:
+    # GitHub Actions cron uses UTC. Every 15 minutes.
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    paths:
+      - 'generate-seo.js'
+      - 'post.html'
+      - 'post.js'
+      - 'styles.css'
+      - 'posts.css'
+      - 'firebase.json'
+      - 'robots.txt'
+      - '.github/workflows/auto-seo-deploy.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: auto-seo-deploy
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Generate SEO pages and sitemap from Firestore
+        run: node generate-seo.js
+
+      - name: Save generated SEO files back to repository
+        shell: bash
+        run: |
+          if [[ -n "$(git status --porcelain -- posts sitemap.xml)" ]]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add posts sitemap.xml
+            git commit -m "자동 SEO 갱신"
+            git push
+          else
+            echo "SEO files are already current."
+          fi
+
+      - name: Create Firebase service account file
+        shell: bash
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_REALTYSH }}
+        run: |
+          if [[ -z "$FIREBASE_SERVICE_ACCOUNT" ]]; then
+            echo "Missing GitHub secret: FIREBASE_SERVICE_ACCOUNT_REALTYSH"
+            exit 1
+          fi
+          printf '%s' "$FIREBASE_SERVICE_ACCOUNT" > "$RUNNER_TEMP/firebase-service-account.json"
+
+      - name: Deploy Firebase Hosting
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/firebase-service-account.json
+        run: npx --yes firebase-tools@latest deploy --only hosting --project realtysh-51b01 --non-interactive

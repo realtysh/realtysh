@@ -1,0 +1,18 @@
+﻿{
+  "firestore": {
+    "rules": "firestore.rules"
+  },
+  "hosting": {
+    "site": "realtysh-51b01",
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "_github/**",
+      "index_backup_*.html",
+      "script_backup_*.js",
+      "*.zip"
+    ]
+  }
+}
