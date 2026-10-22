@@ -1,4 +1,4 @@
-name: Auto SEO and Firebase Deploy
+﻿name: Auto SEO and Firebase Deploy
 
 on:
   schedule:
@@ -46,7 +46,7 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add posts sitemap.xml
-            git commit -m "?�동 SEO 갱신"
+            git commit -m "Auto SEO update"
             git push
           else
             echo "SEO files are already current."
