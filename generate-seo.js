@@ -1,5 +1,5 @@
 // generate-seo.js
-// 현진부동산 Firestore 매물 -> /posts/<문서ID>.html + sitemap.xml 자동 생성
+// 현진부동산 Firestore 매물 -> /posts/<문서ID>.html + sitemap.xml + rss.xml 자동 생성
 // 실행: node generate-seo.js
 const fs=require("fs"), path=require("path");
 const ROOT=__dirname, POSTS_DIR=path.join(ROOT,"posts");
@@ -7,6 +7,9 @@ const PROJECT_ID="realtysh-51b01", SITE="https://realtysh.com";
 const FIRESTORE_URL=`https://firestore.googleapis.com/v1/projects/${PROJECT_ID}/databases/(default)/documents/posts`;
 
 function esc(v=""){return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}
+function xml(v=""){return String(v).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;")}
+function isoDate(v){const d=new Date(v||Date.now());return Number.isNaN(d.getTime())?new Date().toISOString().slice(0,10):d.toISOString().slice(0,10)}
+function rfcDate(v){const d=new Date(v||Date.now());return Number.isNaN(d.getTime())?new Date().toUTCString():d.toUTCString()}
 function fv(v){if(!v||typeof v!=="object")return ""; if("stringValue"in v)return v.stringValue;if("integerValue"in v)return Number(v.integerValue);if("doubleValue"in v)return v.doubleValue;if("booleanValue"in v)return v.booleanValue;if("timestampValue"in v)return v.timestampValue;if("nullValue"in v)return null;if("arrayValue"in v)return(v.arrayValue.values||[]).map(fv);if("mapValue"in v)return fields(v.mapValue.fields||{});return ""}
 function fields(o={}){const r={};for(const[k,v]of Object.entries(o))r[k]=fv(v);return r}
 const PROPERTY_TYPES={apartment:"아파트",house:"단독주택",commercial:"상가",warehouse:"공장/창고",presale:"분양권",land:"토지",other:"기타"};
@@ -42,6 +45,7 @@ function html(id,p){
 ${image?`<meta property="og:image" content="${esc(image)}">`:""}
 <script type="application/ld+json" id="property-jsonld">${jsonLd(id,p,canonical)}</script>
 <link rel="canonical" id="canonical-url" href="${canonical}">
+<link rel="alternate" type="application/rss+xml" title="현진부동산 최신 매물 RSS" href="${SITE}/rss.xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
@@ -58,8 +62,8 @@ ${image?`<meta property="og:image" content="${esc(image)}">`:""}
 <header class="site-header"><a class="wordmark" href="index.html" aria-label="현진부동산 홈"><span class="wordmark-icon" aria-hidden="true">현</span><span>현진부동산</span></a><nav class="main-nav" aria-label="주요 메뉴"><a href="index.html#homes">매물 목록</a><a href="index.html#contact">상담 문의</a></nav></header>
 <main class="post-page" id="main"><div class="post-page-shell">
 <a class="post-back-link" href="index.html#homes">← 게시글 목록으로</a>
-<p class="post-page-status" id="post-page-status" role="status" aria-live="polite">게시글을 불러오는 중입니다.</p>
-<article class="post-detail" id="post-detail" hidden>
+<p class="post-page-status" id="post-page-status" role="status" aria-live="polite" hidden>게시글을 불러오는 중입니다.</p>
+<article class="post-detail" id="post-detail">
 <div class="post-detail-heading"><div class="detail-tags" id="post-detail-tags"><span>${typeName}</span><span>${dealName}</span></div><h1 id="post-detail-title">${title}</h1><p class="post-detail-price" id="post-detail-price">${price}</p><p class="post-detail-location" id="post-detail-location">${location}</p><p class="post-detail-views" id="post-detail-views"></p><div class="post-owner-actions admin-only" id="post-owner-actions" hidden><a class="post-edit-link" id="post-edit-link" href="index.html">수정</a><button class="post-delete-button" id="post-delete-button" type="button">삭제</button></div></div>
 <section class="post-property-table-section" id="post-property-table-section" aria-labelledby="post-property-table-title"${hasTable?"":" hidden"}><p class="eyebrow">PROPERTY DETAILS</p><h2 id="post-property-table-title">매물 주요정보</h2><div class="property-table-scroll"><table class="property-info-table"><tbody id="post-property-table">${tableHtml}</tbody></table></div></section>
 <section class="post-property-table-section broker-table-section" id="broker-table-section" aria-labelledby="broker-table-title" hidden><p class="eyebrow">BROKER DETAILS</p><h2 id="broker-table-title">중개사무소 정보</h2><div class="property-table-scroll"><table class="property-info-table"><tbody id="post-broker-table"></tbody></table></div></section>
@@ -73,7 +77,8 @@ ${image?`<meta property="og:image" content="${esc(image)}">`:""}
 <footer class="site-footer"><a class="wordmark footer-wordmark" href="index.html"><span class="wordmark-icon" aria-hidden="true">현</span><span>현진부동산</span></a><p>매물 정보와 이미지는 현진 공인중개사사무소가 제공합니다.</p><span class="copyright">© 2026 현진 공인중개사사무소</span></footer>
 </body></html>`;
 }
-async function allPosts(){const a=[];let token="";do{const u=new URL(FIRESTORE_URL);u.searchParams.set("pageSize","300");if(token)u.searchParams.set("pageToken",token);const r=await fetch(u);if(!r.ok)throw new Error(`Firestore 읽기 실패 (${r.status}): ${await r.text()}`);const d=await r.json();for(const doc of d.documents||[]){const id=doc.name.split("/").pop();a.push({id,...fields(doc.fields||{})})}token=d.nextPageToken||""}while(token);return a}
-function sitemap(posts){const urls=[`${SITE}/`,...posts.map(p=>`${SITE}/posts/${encodeURIComponent(p.id)}.html`)];return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${urls.map(u=>`  <url><loc>${u}</loc></url>`).join("\n")}\n</urlset>\n`}
-async function main(){console.log("현진부동산 SEO 자동 생성 시작...");const posts=await allPosts();if(!posts.length)throw new Error("Firestore에서 매물을 찾지 못했습니다.");fs.mkdirSync(POSTS_DIR,{recursive:true});const keep=new Set();for(const p of posts){const f=`${p.id}.html`;keep.add(f);fs.writeFileSync(path.join(POSTS_DIR,f),html(p.id,p),"utf8")}for(const f of fs.readdirSync(POSTS_DIR)){if(f.endsWith(".html")&&!keep.has(f))fs.unlinkSync(path.join(POSTS_DIR,f))}fs.writeFileSync(path.join(ROOT,"sitemap.xml"),sitemap(posts),"utf8");console.log(`완료: ${posts.length}개 매물 SEO 페이지 생성`);console.log("완료: sitemap.xml 갱신");console.log("검토 후 Firebase Hosting을 배포하세요.")}
+async function allPosts(){const a=[];let token="";do{const u=new URL(FIRESTORE_URL);u.searchParams.set("pageSize","300");if(token)u.searchParams.set("pageToken",token);const r=await fetch(u);if(!r.ok)throw new Error(`Firestore 읽기 실패 (${r.status}): ${await r.text()}`);const d=await r.json();for(const doc of d.documents||[]){const id=doc.name.split("/").pop();a.push({id,_createTime:doc.createTime||"",_updateTime:doc.updateTime||doc.createTime||"",...fields(doc.fields||{})})}token=d.nextPageToken||""}while(token);return a}
+function sitemap(posts){const homeDate=isoDate(new Date());const items=[`  <url><loc>${SITE}/</loc><lastmod>${homeDate}</lastmod></url>`,...posts.map(p=>`  <url><loc>${SITE}/posts/${encodeURIComponent(p.id)}.html</loc><lastmod>${isoDate(p._updateTime)}</lastmod></url>`)];return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${items.join("\n")}\n</urlset>\n`}
+function rss(posts){const latest=[...posts].sort((a,b)=>new Date(b._updateTime||0)-new Date(a._updateTime||0)).slice(0,50);const items=latest.map(p=>{const link=`${SITE}/posts/${encodeURIComponent(p.id)}.html`;return `  <item>\n    <title>${xml(p.title||"시흥 부동산 매물")}</title>\n    <link>${xml(link)}</link>\n    <guid isPermaLink="true">${xml(link)}</guid>\n    <pubDate>${rfcDate(p._updateTime||p._createTime)}</pubDate>\n    <description>${xml(desc(p))}</description>\n  </item>`}).join("\n");return `<?xml version="1.0" encoding="UTF-8"?>\n<rss version="2.0">\n<channel>\n  <title>현진부동산 최신 매물</title>\n  <link>${SITE}/</link>\n  <description>시흥 공장·창고·상가·토지·아파트·분양권 최신 매물 정보</description>\n  <language>ko</language>\n  <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>\n${items}\n</channel>\n</rss>\n`} 
+async function main(){console.log("현진부동산 SEO 자동 생성 시작...");const posts=await allPosts();if(!posts.length)throw new Error("Firestore에서 매물을 찾지 못했습니다.");fs.mkdirSync(POSTS_DIR,{recursive:true});const keep=new Set();for(const p of posts){const f=`${p.id}.html`;keep.add(f);fs.writeFileSync(path.join(POSTS_DIR,f),html(p.id,p),"utf8")}for(const f of fs.readdirSync(POSTS_DIR)){if(f.endsWith(".html")&&!keep.has(f))fs.unlinkSync(path.join(POSTS_DIR,f))}fs.writeFileSync(path.join(ROOT,"sitemap.xml"),sitemap(posts),"utf8");fs.writeFileSync(path.join(ROOT,"rss.xml"),rss(posts),"utf8");console.log(`완료: ${posts.length}개 매물 SEO 페이지 생성`);console.log("완료: sitemap.xml 갱신");console.log("완료: rss.xml 갱신");console.log("검토 후 Firebase Hosting을 배포하세요.")}
 main().catch(e=>{console.error("\nSEO 자동 생성 실패:");console.error(e.message||e);process.exitCode=1});
