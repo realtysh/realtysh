@@ -42,15 +42,40 @@ jobs:
       - name: Save generated SEO files back to repository
         shell: bash
         run: |
-          if [[ -n "$(git status --porcelain -- posts sitemap.xml rss.xml)" ]]; then
-            git config user.name "github-actions[bot]"
-            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # main 브랜치가 실행 도중 변경되어도 최신 상태를 기준으로 SEO를 다시 생성해 push합니다.
+          for attempt in 1 2 3; do
+            git fetch origin main
+
+            if [[ "$(git rev-parse HEAD)" != "$(git rev-parse origin/main)" ]]; then
+              echo "Remote main changed. Refreshing from origin/main and regenerating SEO files..."
+              git reset --hard origin/main
+              node generate-seo.js
+            fi
+
+            if [[ -z "$(git status --porcelain -- posts sitemap.xml rss.xml)" ]]; then
+              echo "SEO files are already current."
+              break
+            fi
+
             git add posts sitemap.xml rss.xml
             git commit -m "Auto SEO update"
-            git push
-          else
-            echo "SEO files are already current."
-          fi
+
+            if git push origin HEAD:main; then
+              echo "SEO files pushed successfully."
+              break
+            fi
+
+            echo "Push was rejected because main changed. Retrying ($attempt/3)..."
+            git reset --hard HEAD~1
+
+            if [[ "$attempt" == "3" ]]; then
+              echo "Failed to push SEO files after 3 attempts."
+              exit 1
+            fi
+          done
 
       - name: Create Firebase service account file
         shell: bash
