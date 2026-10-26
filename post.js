@@ -457,12 +457,17 @@ function connectPostPage() {
       }
       connectPrivateComments();
       if (!isAdmin) {
-    database.collection("posts").doc(postId).update({
-  views: firebase.firestore.FieldValue.increment(1)
-}).catch((error) => {
-  console.error("조회수 증가에 실패했습니다.", error);
-});
-    recordDailyPostView();
+        // auth 상태 콜백이 두 번 호출되더라도 같은 페이지 로드에서는 조회수를 한 번만 기록합니다.
+        const viewGuardKey = `hyunjin-post-viewed-${postId}`;
+        if (!sessionStorage.getItem(viewGuardKey)) {
+          sessionStorage.setItem(viewGuardKey, "1");
+          database.collection("posts").doc(postId).update({
+            views: firebase.firestore.FieldValue.increment(1)
+          }).catch((error) => {
+            console.error("조회수 증가에 실패했습니다.", error);
+          });
+          recordDailyPostView();
+        }
       }
 });
     unsubscribePost = database.collection("posts").doc(postId).onSnapshot((snapshot) => {

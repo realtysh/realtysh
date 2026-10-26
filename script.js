@@ -1,4 +1,4 @@
-﻿const searchForm = document.querySelector("#property-search");
+const searchForm = document.querySelector("#property-search");
 const searchQuery = document.querySelector("#search-query");
 const searchDeal = document.querySelector("#search-deal");
 const filterButtons = [...document.querySelectorAll(".category-button[data-filter]")];
@@ -45,6 +45,8 @@ const statsDate = document.querySelector("#stats-date");
 const statsStatus = document.querySelector("#stats-status");
 const statsSummary = document.querySelector("#stats-summary");
 const statsList = document.querySelector("#stats-list");
+const statsVisits = document.querySelector("#stats-visits");
+let statsSearches = document.querySelector("#stats-searches");
 const postTypes = {
   all: "전체",
   apartment: "아파트",
@@ -353,21 +355,67 @@ function getKoreaDayStart() {
   return new Date(Date.UTC(Number(value.year), Number(value.month) - 1, Number(value.day) - 1, 15, 0, 0));
 }
 
+function isLikelyBot() {
+  const ua = navigator.userAgent || "";
+  return navigator.webdriver || /bot|crawler|spider|slurp|bingpreview|facebookexternalhit|kakaotalk-scrap|naverbot|yeti|googlebot/i.test(ua);
+}
+
+function getVisitorId() {
+  const key = "hyunjin-anon-visitor-id";
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+
+function getVisitSource() {
+  if (!document.referrer) return { source: "직접접속", referrerHost: "" };
+  try {
+    const host = new URL(document.referrer).hostname.replace(/^www\./, "");
+    if (host.endsWith("naver.com")) return { source: "네이버", referrerHost: host };
+    if (host.endsWith("google.com") || host.endsWith("google.co.kr")) return { source: "구글", referrerHost: host };
+    if (host === location.hostname) return { source: "내부이동", referrerHost: host };
+    return { source: "기타", referrerHost: host.slice(0, 120) };
+  } catch { return { source: "기타", referrerHost: "" }; }
+}
+
+function getDeviceType() {
+  const ua = navigator.userAgent || "";
+  if (/tablet|ipad/i.test(ua)) return "태블릿";
+  if (/mobile|iphone|android/i.test(ua)) return "모바일";
+  return "PC";
+}
+
 async function recordTodayVisit() {
-  if (!database) return;
+  if (!database || isAdmin || isLikelyBot()) return;
   const dateKey = getKoreaDateKey();
   const storageKey = `hyunjin-visit-${dateKey}`;
   if (localStorage.getItem(storageKey)) return;
-  const ref = database.collection("dailyStats").doc(dateKey);
+
+  const visitorId = getVisitorId();
+  const eventId = `${dateKey}_${visitorId}`.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const statsRef = database.collection("dailyStats").doc(dateKey);
+  const eventRef = database.collection("visitorEvents").doc(eventId);
+  const { source, referrerHost } = getVisitSource();
+  const landingPath = `${location.pathname}${location.search}`.slice(0, 500);
+
   try {
-    await database.runTransaction(async tx => {
-      const snap = await tx.get(ref);
-      if (snap.exists) tx.update(ref, { visitors: (Number(snap.data().visitors) || 0) + 1 });
-      else tx.set(ref, { visitors: 1 });
+    // 익명 사용자는 dailyStats/visitorEvents를 읽을 수 없으므로 transaction read를 쓰지 않습니다.
+    // eventId가 날짜+브라우저 ID로 고정되어 있어 같은 브라우저의 하루 중복 생성은 Firestore 문서 ID로 막습니다.
+    // Firestore Web SDK의 DocumentReference에는 create()가 없습니다.
+    // set()은 문서가 없을 때 create 규칙을 사용하고, 이미 있으면 update 규칙에서 차단되어 하루 중복 집계를 막습니다.
+    await eventRef.set({
+      dateKey, visitorId, source, referrerHost, landingPath,
+      device: getDeviceType(), createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
+    await statsRef.set({ visitors: firebase.firestore.FieldValue.increment(1) }, { merge: true });
     localStorage.setItem(storageKey, "1");
   } catch (error) {
-    console.warn("오늘 방문자 집계를 건너뜁니다.", error);
+    // 이미 같은 방문 이벤트가 있으면 재집계하지 않습니다.
+    if (error?.code === "already-exists") localStorage.setItem(storageKey, "1");
+    else console.warn("오늘 방문자 집계를 건너뜁니다.", error);
   }
 }
 
@@ -390,8 +438,9 @@ async function recordDailyPostView(postId) {
 
 async function openPostWithDailyView(event, postId, href) {
   if (isAdmin) return;
+  // 조회수는 상세 페이지(post.js)에서 1회만 기록합니다.
+  // 목록 클릭 시 미리 올리면 상세 페이지에서 다시 올라 2회 집계되므로 여기서는 이동만 합니다.
   event.preventDefault();
-  await recordDailyPostView(postId);
   window.location.href = href;
 }
 
@@ -444,15 +493,38 @@ function extractDailyPostViews(data = {}) {
     .filter(item => item.views > 0).sort((a, b) => b.views - a.views);
 }
 
+function ensureSearchStatsSection() {
+  if (statsSearches) return statsSearches;
+  const visits = document.querySelector("#stats-visits");
+  if (!visits || !visits.parentElement) return null;
+  const heading = document.createElement("h3");
+  heading.className = "visit-detail-title";
+  heading.textContent = "검색어 통계";
+  const list = document.createElement("div");
+  list.className = "stats-list";
+  list.id = "stats-searches";
+  const note = document.createElement("p");
+  note.className = "stats-note";
+  note.textContent = "홈페이지 검색창에서 실제로 검색을 실행한 단어를 날짜별로 집계합니다. 관리자 검색은 제외합니다.";
+  visits.parentElement.insertBefore(heading, visits.previousElementSibling || visits);
+  visits.parentElement.insertBefore(list, visits.previousElementSibling || visits);
+  visits.parentElement.insertBefore(note, visits.previousElementSibling || visits);
+  statsSearches = list;
+  return list;
+}
+
 async function loadStatsForDate(dateKey) {
   if (!database || !isAdmin || !statsStatus || !statsSummary || !statsList) return;
   statsStatus.textContent = "통계를 불러오는 중입니다.";
-  statsSummary.replaceChildren(); statsList.replaceChildren();
+  ensureSearchStatsSection();
+  statsSummary.replaceChildren(); statsList.replaceChildren(); if (statsVisits) statsVisits.replaceChildren(); if (statsSearches) statsSearches.replaceChildren();
   try {
     const range = getKoreaDateRange(dateKey);
-    const [statsSnap, commentsSnap] = await Promise.all([
+    const [statsSnap, commentsSnap, visitsSnap, searchesSnap] = await Promise.all([
       database.collection("dailyStats").doc(dateKey).get(),
-      database.collectionGroup("comments").where("createdAt", ">=", range.start).where("createdAt", "<", range.end).get()
+      database.collectionGroup("comments").where("createdAt", ">=", range.start).where("createdAt", "<", range.end).get(),
+      database.collection("visitorEvents").where("dateKey", "==", dateKey).get(),
+      database.collection("searchEvents").where("dateKey", "==", dateKey).get()
     ]);
     const data = statsSnap.exists ? statsSnap.data() : {};
     const visitors = Number(data.visitors) || 0;
@@ -477,6 +549,55 @@ async function loadStatsForDate(dateKey) {
         const count=document.createElement("b"); count.textContent=item.views + "회";
         row.append(rank,title,count); statsList.append(row);
       });
+    }
+    if (statsVisits) {
+      const visits = visitsSnap.docs.map(doc => doc.data()).sort((a,b) => {
+        const at=a.createdAt?.seconds||0, bt=b.createdAt?.seconds||0; return at-bt;
+      });
+      if (!visits.length) {
+        const empty=document.createElement("p"); empty.className="stats-empty";
+        empty.textContent="이 날짜에는 방문 상세 기록이 없습니다. (기능 적용 전 방문은 상세가 없습니다.)";
+        statsVisits.append(empty);
+      } else {
+        visits.forEach(visit => {
+          const row=document.createElement("div"); row.className="visit-detail-row";
+          const time=document.createElement("strong");
+          time.textContent=visit.createdAt?.toDate ? visit.createdAt.toDate().toLocaleTimeString("ko-KR", {timeZone:"Asia/Seoul",hour:"2-digit",minute:"2-digit",second:"2-digit"}) : "시간 확인 중";
+          const source=document.createElement("span"); source.textContent=visit.source || "기타";
+          const device=document.createElement("span"); device.textContent=visit.device || "-";
+          const path=document.createElement("code"); path.textContent=visit.landingPath || "/";
+          const ref=document.createElement("small"); ref.textContent=visit.referrerHost ? `유입: ${visit.referrerHost}` : "유입: 직접접속";
+          row.append(time,source,device,path,ref); statsVisits.append(row);
+        });
+      }
+    }
+    if (statsSearches) {
+      const grouped = new Map();
+      searchesSnap.docs.forEach(doc => {
+        const item = doc.data();
+        const keyword = String(item.keyword || "").trim();
+        if (!keyword) return;
+        const current = grouped.get(keyword) || { count: 0, latest: null };
+        current.count += 1;
+        const d = item.createdAt?.toDate ? item.createdAt.toDate() : null;
+        if (d && (!current.latest || d > current.latest)) current.latest = d;
+        grouped.set(keyword, current);
+      });
+      const rows = [...grouped.entries()].sort((a,b) => b[1].count-a[1].count || a[0].localeCompare(b[0], "ko"));
+      if (!rows.length) {
+        const empty=document.createElement("p"); empty.className="stats-empty";
+        empty.textContent="이 날짜에는 홈페이지 검색어 기록이 없습니다."; statsSearches.append(empty);
+      } else {
+        rows.forEach(([keyword, info], index) => {
+          const row=document.createElement("div"); row.className="stats-list-row";
+          const rank=document.createElement("span"); rank.className="stats-rank"; rank.textContent=String(index+1);
+          const title=document.createElement("strong"); title.textContent=keyword;
+          const count=document.createElement("b"); count.textContent=info.count + "회";
+          const latest=document.createElement("small"); latest.className="search-latest";
+          latest.textContent=info.latest ? "최근 " + info.latest.toLocaleTimeString("ko-KR", {timeZone:"Asia/Seoul",hour:"2-digit",minute:"2-digit"}) : "";
+          row.append(rank,title,latest,count); statsSearches.append(row);
+        });
+      }
     }
     statsStatus.textContent=dateKey + " 통계";
   } catch (error) {
@@ -511,6 +632,7 @@ function connectAdminAuth() {
       }
     }
     updateAdminControls();
+    if (!isAdmin) recordTodayVisit();
   });
 }
 
@@ -609,8 +731,60 @@ function handleRequestedEdit() {
   openPostForm(post);
 }
 
-searchForm.addEventListener("submit", (event) => {
+async function waitForSearchDatabase(timeoutMs = 8000) {
+  const started = Date.now();
+  while (!database && Date.now() - started < timeoutMs) {
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  return database;
+}
+
+async function recordSearchKeyword(keyword) {
+  const clean = String(keyword || "").trim().replace(/\s+/g, " ").slice(0, 100);
+  if (!clean) return false;
+
+  // Firebase 초기화가 늦는 휴대폰에서도 검색 기록이 빠지지 않도록 기다립니다.
+  const db = await waitForSearchDatabase();
+  if (!db) {
+    console.warn("검색어 통계: Firestore 초기화 대기시간 초과");
+    return false;
+  }
+
+  // 10초 이내 완전히 같은 검색어의 연속 중복만 막습니다.
+  const dedupeKey = "hyunjin-last-search";
+  const now = Date.now();
+  try {
+    const previous = JSON.parse(sessionStorage.getItem(dedupeKey) || "null");
+    if (previous && previous.keyword === clean && now - Number(previous.time || 0) < 10000) return true;
+  } catch {}
+
+  const payload = {
+    dateKey: getKoreaDateKey(),
+    keyword: clean,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  // 일시적인 네트워크/초기화 지연까지 고려해 최대 3회 저장을 시도합니다.
+  let lastError = null;
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      await db.collection("searchEvents").add(payload);
+      try { sessionStorage.setItem(dedupeKey, JSON.stringify({ keyword: clean, time: now })); } catch {}
+      console.info("검색어 통계 저장 완료:", clean);
+      return true;
+    } catch (error) {
+      lastError = error;
+      console.warn(`검색어 통계 저장 실패 (${attempt}/3)`, error);
+      await new Promise((resolve) => setTimeout(resolve, 350 * attempt));
+    }
+  }
+  console.error("검색어 통계 최종 저장 실패", lastError);
+  return false;
+}
+
+searchForm.addEventListener("submit", async (event) => {
   event.preventDefault();
+  await recordSearchKeyword(searchQuery?.value);
   updateListings();
   document.querySelector("#homes").scrollIntoView({ behavior: "smooth", block: "start" });
 });
@@ -1104,7 +1278,6 @@ async function connectFirebase() {
   try {
     if (firebase.apps.length === 0) firebase.initializeApp(config);
     database = firebase.firestore();
-    recordTodayVisit();
     auth = firebase.auth();
     connectAdminAuth();
     connectNeighborhoodNews();

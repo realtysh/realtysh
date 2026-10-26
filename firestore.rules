@@ -79,6 +79,32 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // 홈페이지 내부 검색어 통계: 고객이 직접 입력한 검색어만 익명 저장하고 관리자는 조회할 수 있습니다.
+    match /searchEvents/{eventId} {
+      allow get, list: if isAdmin();
+      allow create: if request.resource.data.keys().hasOnly(['dateKey','keyword','createdAt'])
+        && request.resource.data.keys().hasAll(['dateKey','keyword','createdAt'])
+        && request.resource.data.dateKey is string && request.resource.data.dateKey.size() == 10
+        && request.resource.data.keyword is string && request.resource.data.keyword.size() > 0 && request.resource.data.keyword.size() <= 100
+        && request.resource.data.createdAt is timestamp;
+      allow update, delete: if isAdmin();
+    }
+
+    // 익명 방문 상세: IP는 저장하지 않고, 하루 1회 브라우저 식별값/유입/첫 페이지/기기만 기록합니다.
+    match /visitorEvents/{eventId} {
+      allow get, list: if isAdmin();
+      allow create: if request.resource.data.keys().hasOnly(['dateKey','visitorId','source','referrerHost','landingPath','device','createdAt'])
+        && request.resource.data.keys().hasAll(['dateKey','visitorId','source','referrerHost','landingPath','device','createdAt'])
+        && request.resource.data.dateKey is string && request.resource.data.dateKey.size() == 10
+        && request.resource.data.visitorId is string && request.resource.data.visitorId.size() > 5 && request.resource.data.visitorId.size() <= 80
+        && request.resource.data.source in ['직접접속','네이버','구글','내부이동','기타']
+        && request.resource.data.referrerHost is string && request.resource.data.referrerHost.size() <= 120
+        && request.resource.data.landingPath is string && request.resource.data.landingPath.size() <= 500
+        && request.resource.data.device in ['PC','모바일','태블릿']
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if isAdmin();
+    }
+
     match /listingInquiries/{inquiryId} {
       allow create: if request.auth != null
         && request.resource.data.ownerUid == request.auth.uid
