@@ -393,6 +393,76 @@ function getKoreaDateKey(date = new Date()) {
   return `${map.year}-${map.month}-${map.day}`;
 }
 
+function isLikelyBot() {
+  const ua = navigator.userAgent || "";
+  return navigator.webdriver || /bot|crawler|spider|slurp|bingpreview|facebookexternalhit|kakaotalk-scrap|naverbot|yeti|googlebot/i.test(ua);
+}
+
+function getVisitorId() {
+  const key = "hyunjin-anon-visitor-id";
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+
+function getVisitSource() {
+  if (!document.referrer) return { source: "직접접속", referrerHost: "" };
+  try {
+    const host = new URL(document.referrer).hostname.replace(/^www\./, "");
+    if (host.endsWith("naver.com")) return { source: "네이버", referrerHost: host };
+    if (host.endsWith("google.com") || host.endsWith("google.co.kr")) return { source: "구글", referrerHost: host };
+    if (host === location.hostname) return { source: "내부이동", referrerHost: host };
+    return { source: "기타", referrerHost: host.slice(0, 120) };
+  } catch { return { source: "기타", referrerHost: "" }; }
+}
+
+function getDeviceType() {
+  const ua = navigator.userAgent || "";
+  if (/tablet|ipad/i.test(ua)) return "태블릿";
+  if (/mobile|iphone|android/i.test(ua)) return "모바일";
+  return "PC";
+}
+
+async function recordTodayVisit() {
+  if (!database || isAdmin || isLikelyBot()) return;
+  const dateKey = getKoreaDateKey();
+  const storageKey = `hyunjin-visit-${dateKey}`;
+  if (localStorage.getItem(storageKey)) return;
+
+  const visitorId = getVisitorId();
+  const eventId = `${dateKey}_${visitorId}`.replace(/[^a-zA-Z0-9_-]/g, "_");
+  const eventRef = database.collection("visitorEvents").doc(eventId);
+  const statsRef = database.collection("dailyStats").doc(dateKey);
+  const { source, referrerHost } = getVisitSource();
+  const landingPath = `${location.pathname}${location.search}`.slice(0, 500);
+
+  try {
+    await eventRef.set({
+      dateKey, visitorId, source, referrerHost, landingPath,
+      device: getDeviceType(), createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    // 방문 상세가 생성되면 이 브라우저의 오늘 방문은 기록된 것으로 처리합니다.
+    // dailyStats 증가가 실패해도 관리자 통계는 visitorEvents를 기준으로 계산합니다.
+    localStorage.setItem(storageKey, "1");
+    try {
+      await statsRef.set({ visitors: firebase.firestore.FieldValue.increment(1) }, { merge: true });
+    } catch (statsError) {
+      console.warn("오늘 방문자 합계 증가는 건너뜁니다.", statsError);
+    }
+  } catch (error) {
+    // 같은 날짜+브라우저 문서가 이미 있으면 중복 방문으로 보고 종료합니다.
+    if (error?.code === "already-exists" || error?.code === "permission-denied") {
+      // permission-denied는 기존 문서 update 차단일 수도 있으므로 중복 재시도를 막습니다.
+      localStorage.setItem(storageKey, "1");
+    } else {
+      console.warn("오늘 방문자 집계를 건너뜁니다.", error);
+    }
+  }
+}
+
 async function recordDailyPostView() {
   if (!database || !postId || isAdmin) return;
   const dateKey = getKoreaDateKey();
@@ -457,6 +527,8 @@ function connectPostPage() {
       }
       connectPrivateComments();
       if (!isAdmin) {
+        // 검색엔진/외부 링크에서 매물 상세로 바로 들어온 방문도 오늘 방문자로 기록합니다.
+        recordTodayVisit();
         // auth 상태 콜백이 두 번 호출되더라도 같은 페이지 로드에서는 조회수를 한 번만 기록합니다.
         const viewGuardKey = `hyunjin-post-viewed-${postId}`;
         if (!sessionStorage.getItem(viewGuardKey)) {

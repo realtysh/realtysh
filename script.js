@@ -405,11 +405,17 @@ async function recordTodayVisit() {
       dateKey, visitorId, source, referrerHost, landingPath,
       device: getDeviceType(), createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
-    await statsRef.set({ visitors: firebase.firestore.FieldValue.increment(1) }, { merge: true });
+    // 방문 상세가 생성되면 오늘 방문 기록은 완료된 것으로 처리합니다.
+    // 관리자 통계는 visitorEvents를 기준으로 집계하므로 dailyStats 증가 실패와 분리합니다.
     localStorage.setItem(storageKey, "1");
+    try {
+      await statsRef.set({ visitors: firebase.firestore.FieldValue.increment(1) }, { merge: true });
+    } catch (statsError) {
+      console.warn("오늘 방문자 합계 증가는 건너뜁니다.", statsError);
+    }
   } catch (error) {
     // 이미 같은 방문 이벤트가 있으면 재집계하지 않습니다.
-    if (error?.code === "already-exists") localStorage.setItem(storageKey, "1");
+    if (error?.code === "already-exists" || error?.code === "permission-denied") localStorage.setItem(storageKey, "1");
     else console.warn("오늘 방문자 집계를 건너뜁니다.", error);
   }
 }
