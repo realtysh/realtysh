@@ -33,6 +33,9 @@
           }
         ]
       }
+    ],
+    "predeploy": [
+      "node generate-seo.js"
     ]
   }
 }

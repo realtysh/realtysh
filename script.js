@@ -30,12 +30,7 @@ const homeView = document.querySelector("#home-view");
 const listingView = document.querySelector("#listing-view");
 const officeCardSection = document.querySelector("#contact");
 
-const naverBlogButton = document.querySelector(".naver-blog-button");
-const officeBrandRow = document.querySelector(".office-card-brand");
-if (naverBlogButton && officeBrandRow) {
-  naverBlogButton.classList.add("naver-blog-button-office");
-  officeBrandRow.append(naverBlogButton);
-}
+// Channel buttons are placed directly in index.html to preserve stable layout.
 
 const adminTodayStats = document.querySelector("#admin-today-stats");
 const adminTodayVisitors = document.querySelector("#admin-today-visitors");
@@ -217,7 +212,7 @@ function showHome() {
 
 function renderFeaturedPosts() {
   if (!featuredGrid) return;
-  const featured = posts.filter((post) => post.featured).slice(0, 8);
+  const featured = posts.filter((post) => post.featured).slice(0, 12);
 
   if (!featured.length) {
     featuredGrid.innerHTML = '<p class="featured-empty">관리자가 추천매물을 선택하면 여기에 표시됩니다.</p>';
@@ -453,12 +448,10 @@ async function loadAdminTodayStats() {
   const dateKey = getKoreaDateKey();
   const dayStart = firebase.firestore.Timestamp.fromDate(getKoreaDayStart());
 
-  // 오늘 방문자 수
+  // 오늘 방문자 수: 방문 상세(visitorEvents)를 기준으로 집계
   try {
-    const statsSnap = await database.collection("dailyStats").doc(dateKey).get();
-    adminTodayVisitors.textContent = String(
-      statsSnap.exists ? (Number(statsSnap.data().visitors) || 0) : 0
-    );
+    const visitsSnap = await database.collection("visitorEvents").where("dateKey", "==", dateKey).get();
+    adminTodayVisitors.textContent = String(visitsSnap.size || 0);
   } catch (error) {
     console.warn("오늘 방문자 수를 불러오지 못했습니다.", error);
     adminTodayVisitors.textContent = "확인 실패";
@@ -527,7 +520,9 @@ async function loadStatsForDate(dateKey) {
       database.collection("searchEvents").where("dateKey", "==", dateKey).get()
     ]);
     const data = statsSnap.exists ? statsSnap.data() : {};
-    const visitors = Number(data.visitors) || 0;
+    // 방문 상세(visitorEvents)를 방문자 수의 기준으로 사용합니다.
+    // dailyStats.visitors 증가가 규칙상 실패하더라도 상세 기록이 있으면 정확히 집계됩니다.
+    const visitors = visitsSnap.size || 0;
     const comments = commentsSnap.size || 0;
     const dailyViews = extractDailyPostViews(data);
     const cards = [["방문자", visitors + "명"], ["댓글", comments + "개"], ["매물 조회", dailyViews.reduce((s,x)=>s+x.views,0) + "회"]];
@@ -1164,9 +1159,9 @@ postForm.addEventListener("submit", async (event) => {
   const wantsFeatured = formData.get("featured") === "on";
   if (wantsFeatured) {
     const otherFeaturedCount = posts.filter((post) => post.featured && post.id !== editingPostId).length;
-    if (otherFeaturedCount >= 8) {
-      postFormStatus.textContent = "추천매물은 최대 8개입니다. 기존 추천매물의 체크를 먼저 해제해 주세요.";
-      alert("추천매물 8개를 초과했습니다. 기존 추천매물의 체크를 먼저 해제해 주세요.");
+    if (otherFeaturedCount >= 12) {
+      postFormStatus.textContent = "추천매물은 최대 12개입니다. 기존 추천매물의 체크를 먼저 해제해 주세요.";
+      alert("추천매물 12개를 초과했습니다. 기존 추천매물의 체크를 먼저 해제해 주세요.");
       return;
     }
   }

@@ -1075,3 +1075,97 @@ button { color: inherit; }
 @media(max-width:600px){.admin-today-stats small{display:none}.stats-dialog-body{padding:18px 20px 24px}.stats-summary{grid-template-columns:1fr}}
 
 .visit-detail-title{margin:22px 0 8px;color:var(--green-dark);font-size:14px}.stats-visits{display:grid;border-top:1px solid var(--line)}.visit-detail-row{display:grid;grid-template-columns:90px 70px 60px minmax(0,1fr);gap:8px;align-items:center;padding:10px 4px;border-bottom:1px solid var(--line);font-size:11px}.visit-detail-row strong{color:var(--green-dark)}.visit-detail-row code{overflow:hidden;color:var(--ink);font-family:inherit;text-overflow:ellipsis;white-space:nowrap}.visit-detail-row small{grid-column:4;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}@media(max-width:600px){.visit-detail-row{grid-template-columns:82px 60px 55px minmax(0,1fr)}.visit-detail-row small{grid-column:1/-1}}
+
+
+/* 2026-10-29: 네이버 블로그 옆 유튜브 채널 바로가기 */
+.office-card-brand .naver-blog-button-office,
+.office-card-brand .youtube-channel-button-office {
+  min-width: 190px;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.office-card-brand .naver-blog-button-office {
+  margin-left: auto;
+  margin-right: 0;
+}
+.youtube-channel-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid #ff4e45;
+  border-radius: 999px;
+  padding: 11px 16px;
+  background: #ff0000;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+.youtube-channel-button strong {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 5px;
+  background: #fff;
+  color: #ff0000;
+  font-size: 13px;
+}
+.office-card-brand .youtube-channel-button-office {
+  margin-left: 10px;
+  margin-right: clamp(12px, 5vw, 72px);
+  flex: 0 0 auto;
+}
+@media (max-width: 900px) {
+  .office-card-brand { flex-wrap: wrap; }
+  .office-card-brand .naver-blog-button-office { margin: 12px 0 0 auto; }
+  .office-card-brand .youtube-channel-button-office { margin: 12px 0 0 8px; }
+}
+@media (max-width: 600px) {
+  .office-card-brand .naver-blog-button-office,
+  .office-card-brand .youtube-channel-button-office {
+    width: 100%;
+    margin: 10px 0 0 0;
+  }
+}
+
+
+/* 2026-10-29 FINAL: 네이버/유튜브 버튼 동일 크기, 오른쪽 이동, 7mm 간격 */
+.office-card-brand { justify-content: flex-start; }
+.office-channel-buttons {
+  margin-left: auto;
+  transform: translateX(32px);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 26px;
+  flex: 0 0 auto;
+}
+.office-channel-buttons .naver-blog-button-office,
+.office-channel-buttons .youtube-channel-button-office {
+  width: 210px !important;
+  min-width: 210px !important;
+  height: 46px !important;
+  min-height: 46px !important;
+  margin: 0 !important;
+  padding: 10px 16px !important;
+  justify-content: flex-start !important;
+  box-sizing: border-box !important;
+  border-radius: 999px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+}
+.office-channel-buttons .youtube-channel-button-office {
+  border: 1px solid #ff0000 !important;
+  background: #ff0000 !important;
+  color: #fff !important;
+}
+@media (max-width: 900px) {
+  .office-channel-buttons { transform: none; margin: 16px 0 0 auto; gap: 18px; }
+}
+@media (max-width: 600px) {
+  .office-channel-buttons { width: 100%; margin: 16px 0 0 0; }
+  .office-channel-buttons .naver-blog-button-office,
+  .office-channel-buttons .youtube-channel-button-office { width: 100% !important; min-width: 0 !important; }
+}

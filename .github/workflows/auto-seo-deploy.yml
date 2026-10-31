@@ -7,7 +7,12 @@ on:
   workflow_dispatch:
   push:
     branches: [ main ]
+    # 홈페이지 핵심 파일이 main에 반영되면 즉시 SEO 재생성 + Firebase 재배포.
+    # main을 홈페이지의 기준본(source of truth)으로 유지해야 예약 실행이 구버전을 덮어쓰지 않습니다.
     paths:
+      - 'index.html'
+      - 'script.js'
+      - 'firebase-config.js'
       - 'generate-seo.js'
       - 'post.html'
       - 'post.js'
@@ -15,6 +20,7 @@ on:
       - 'posts.css'
       - 'firebase.json'
       - 'robots.txt'
+      - 'firestore.rules'
       - '.github/workflows/auto-seo-deploy.yml'
 
 permissions:
