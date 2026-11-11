@@ -464,7 +464,7 @@ async function recordTodayVisit() {
 }
 
 async function recordDailyPostView() {
-  if (!database || !postId || isAdmin) return;
+  if (!database || !postId || isAdmin || isLikelyBot()) return;
   const dateKey = getKoreaDateKey();
   try {
     await database.collection("dailyStats").doc(dateKey).set({
@@ -526,8 +526,8 @@ function connectPostPage() {
         privateComments.hidden = true;
       }
       connectPrivateComments();
-      if (!isAdmin) {
-        // 검색엔진/외부 링크에서 매물 상세로 바로 들어온 방문도 오늘 방문자로 기록합니다.
+      if (!isAdmin && !isLikelyBot()) {
+        // 검색엔진/외부 링크에서 매물 상세로 바로 들어온 실제 방문만 오늘 방문자로 기록합니다.
         recordTodayVisit();
         // auth 상태 콜백이 두 번 호출되더라도 같은 페이지 로드에서는 조회수를 한 번만 기록합니다.
         const viewGuardKey = `hyunjin-post-viewed-${postId}`;

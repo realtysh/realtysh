@@ -422,7 +422,7 @@ async function recordTodayVisit() {
 
 
 async function recordDailyPostView(postId) {
-  if (!database || !postId || isAdmin) return;
+  if (!database || !postId || isAdmin || isLikelyBot()) return;
   const dateKey = getKoreaDateKey();
   const ref = database.collection("dailyStats").doc(dateKey);
 
