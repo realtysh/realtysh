@@ -111,7 +111,7 @@ function createPostCard(post) {
 
   const detailLink = document.createElement("a");
   detailLink.className = "property-list-link";
-  detailLink.href = `posts/${encodeURIComponent(post.id)}.html`;
+  detailLink.href = `post.html?id=${encodeURIComponent(post.id)}`;
   detailLink.setAttribute("aria-label", `${post.title || "매물"} 상세 게시글 보기`);
   detailLink.addEventListener("click", (event) => openPostWithDailyView(event, post.id, detailLink.href));
 
@@ -236,7 +236,7 @@ function renderFeaturedPosts() {
 
     const link = document.createElement("a");
     link.className = "featured-card-link";
-    link.href = `posts/${encodeURIComponent(post.id)}.html`;
+    link.href = `post.html?id=${encodeURIComponent(post.id)}`;
     link.setAttribute("aria-label", `${post.title || "추천매물"} 상세보기`);
     link.addEventListener("click", (event) => openPostWithDailyView(event, post.id, link.href));
 
