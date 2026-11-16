@@ -1338,6 +1338,14 @@ function openInquiryForm() {
 }
 document.querySelector("#open-inquiry")?.addEventListener("click", openInquiryForm);
 document.querySelector("#hero-open-inquiry")?.addEventListener("click", openInquiryForm);
+// 매수 상담은 다른 페이지로 이동하지 않고 채널톡 메신저를 엽니다.
+document.querySelector("#hero-open-buyer-chat")?.addEventListener("click", () => {
+  if (typeof window.ChannelIO === "function") {
+    window.ChannelIO("showMessenger");
+  } else {
+    window.alert("채팅 상담을 불러오지 못했습니다. 잠시 후 다시 시도하시거나 010-3664-1861로 전화해 주세요.");
+  }
+});
 document.querySelector('a[href="#inquiry"]')?.addEventListener("click", (event) => {
   event.preventDefault(); mainNav.classList.remove("is-open"); menuToggle.setAttribute("aria-expanded", "false"); openInquiryForm();
 });
