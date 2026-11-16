@@ -1188,3 +1188,16 @@ button { color: inherit; }
 .hyunjin-detail-actions{margin:16px 0 18px}
 .hyunjin-detail-actions>*{flex:1 1 230px}
 @media(max-width:600px){.hyunjin-consult-hero{padding:19px 15px;margin:12px auto 20px}.hyunjin-consult-hero h2{font-size:21px}.hyunjin-action-call,.hyunjin-action-sell{font-size:14px;min-height:47px}.hyunjin-card-actions{gap:5px;padding:7px}.hyunjin-card-actions a{font-size:11px}}
+
+/* v3 editable three-line homepage notice */
+.home-notice{width:min(660px,100%);margin:36px auto 0;padding:19px 23px;border:1px solid rgba(255,215,112,.72);border-radius:10px;background:rgba(3,51,37,.9);color:#fff;text-align:left;box-shadow:0 10px 24px rgba(0,0,0,.16)}
+.home-notice-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+.home-notice-head h2{font-size:18px;margin:0;color:#ffda74}
+.home-notice-head button{padding:7px 12px;border:1px solid #f8d778;background:transparent;color:#ffda74;border-radius:5px;cursor:pointer}
+.home-notice-head button[hidden]{display:none}
+.home-notice-lines{display:grid;gap:8px}
+.home-notice-lines p{margin:0;font-size:14px;line-height:1.55;overflow-wrap:anywhere}
+.home-notice-status{font-size:12px;color:#ffe2a2}
+.notice-form{padding:22px 26px;display:grid;gap:12px}
+.notice-form>p{margin:0}
+@media(max-width:650px){.home-notice{padding:16px;margin-top:26px}.home-notice-lines p{font-size:13px}}

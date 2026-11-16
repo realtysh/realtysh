@@ -7,6 +7,21 @@ service cloud.firestore {
       allow list, create, update, delete: if false;
     }
 
+    // Public homepage notice: everyone can read, only an existing administrator can edit.
+    match /siteContent/homeNotice {
+      allow read: if true;
+      allow create, update: if isAdmin()
+        && request.resource.data.keys().hasOnly(['lines', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['lines', 'updatedAt'])
+        && request.resource.data.lines is list
+        && request.resource.data.lines.size() == 3
+        && request.resource.data.lines[0] is string && request.resource.data.lines[0].size() > 0 && request.resource.data.lines[0].size() <= 120
+        && request.resource.data.lines[1] is string && request.resource.data.lines[1].size() > 0 && request.resource.data.lines[1].size() <= 120
+        && request.resource.data.lines[2] is string && request.resource.data.lines[2].size() > 0 && request.resource.data.lines[2].size() <= 120
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if false;
+    }
+
     match /posts/{postId} {
       allow read: if true;
       allow create: if isAdmin() && validPost(request.resource.data);
