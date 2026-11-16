@@ -56,6 +56,7 @@ ${image?`<meta property="og:image" content="${esc(image)}">`:""}
 <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" defer></script>
 <script src="firebase-config.js?v=__BUILD_ID__" defer></script>
 <script src="../post.js?v=__BUILD_ID__" defer></script>
+<script src="../channel-chat.js?v=20261116" defer></script>
 </head>
 <body>
 <a class="skip-link" href="#main">본문으로 건너뛰기</a>
@@ -64,7 +65,7 @@ ${image?`<meta property="og:image" content="${esc(image)}">`:""}
 <a class="post-back-link" href="index.html#homes">← 게시글 목록으로</a>
 <p class="post-page-status" id="post-page-status" role="status" aria-live="polite" hidden>게시글을 불러오는 중입니다.</p>
 <article class="post-detail" id="post-detail">
-<div class="post-detail-heading"><div class="detail-tags" id="post-detail-tags"><span>${typeName}</span><span>${dealName}</span></div><h1 id="post-detail-title">${title}</h1><p class="post-detail-price" id="post-detail-price">${price}</p><p class="post-detail-location" id="post-detail-location">${location}</p><p class="post-detail-views" id="post-detail-views"></p><div class="post-owner-actions admin-only" id="post-owner-actions" hidden><a class="post-edit-link" id="post-edit-link" href="index.html">수정</a><button class="post-delete-button" id="post-delete-button" type="button">삭제</button></div></div>
+<div class="post-detail-heading"><div class="detail-tags" id="post-detail-tags"><span>${typeName}</span><span>${dealName}</span></div><h1 id="post-detail-title">${title}</h1><p class="post-detail-price" id="post-detail-price">${price}</p><div class="hyunjin-detail-actions"><a class="hyunjin-action-call" href="tel:01036641861">☎ 이 매물 전화 상담하기 <small>010-3664-1861</small></a><a class="hyunjin-action-sell" href="index.html#inquiry">▤ 분양권·매물 접수</a></div><p class="post-detail-location" id="post-detail-location">${location}</p><p class="post-detail-views" id="post-detail-views"></p><div class="post-owner-actions admin-only" id="post-owner-actions" hidden><a class="post-edit-link" id="post-edit-link" href="index.html">수정</a><button class="post-delete-button" id="post-delete-button" type="button">삭제</button></div></div>
 <section class="post-property-table-section" id="post-property-table-section" aria-labelledby="post-property-table-title"${hasTable?"":" hidden"}><p class="eyebrow">PROPERTY DETAILS</p><h2 id="post-property-table-title">매물 주요정보</h2><div class="property-table-scroll"><table class="property-info-table"><tbody id="post-property-table">${tableHtml}</tbody></table></div></section>
 <section class="post-property-table-section broker-table-section" id="broker-table-section" aria-labelledby="broker-table-title" hidden><p class="eyebrow">BROKER DETAILS</p><h2 id="broker-table-title">중개사무소 정보</h2><div class="property-table-scroll"><table class="property-info-table"><tbody id="post-broker-table"></tbody></table></div></section>
 <figure class="post-info-image" id="post-info-image-container" hidden><img id="post-info-image" alt="매물정보표 이미지" loading="lazy"></figure>

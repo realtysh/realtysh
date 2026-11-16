@@ -316,6 +316,20 @@ function renderFeaturedPosts() {
     body.append(meta, title, price, legalInfo, brokerLine);
     link.append(photo, body);
     card.append(link);
+    const actions = document.createElement("div");
+    actions.className = "hyunjin-card-actions";
+    const call = document.createElement("a");
+    call.className = "hyunjin-card-call";
+    call.href = "tel:01036641861";
+    call.textContent = "☎ 전화 상담하기";
+    call.setAttribute("aria-label", `${post.title || "매물"} 전화 상담 010-3664-1861`);
+    const detail = document.createElement("a");
+    detail.className = "hyunjin-card-detail";
+    detail.href = link.href;
+    detail.textContent = "상세보기 ›";
+    detail.addEventListener("click", (event) => openPostWithDailyView(event, post.id, detail.href));
+    actions.append(call, detail);
+    card.append(actions);
     return card;
   }));
 }
@@ -1323,6 +1337,7 @@ function openInquiryForm() {
   inquiryForm.hidden = false; inquirySuccess.hidden = true; inquiryForm.reset(); inquiryStatus.textContent = ""; inquiryDialog.showModal();
 }
 document.querySelector("#open-inquiry")?.addEventListener("click", openInquiryForm);
+document.querySelector("#hero-open-inquiry")?.addEventListener("click", openInquiryForm);
 document.querySelector('a[href="#inquiry"]')?.addEventListener("click", (event) => {
   event.preventDefault(); mainNav.classList.remove("is-open"); menuToggle.setAttribute("aria-expanded", "false"); openInquiryForm();
 });
