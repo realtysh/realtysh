@@ -668,6 +668,12 @@ function openPostForm(post = null) {
 
   editingPostId = post?.id || null;
   postForm.reset();
+  // 신규 등록 시 현재 보고 있는 매물 카테고리를 기본값으로 지정합니다.
+  // 기존 매물 수정 시에는 저장된 매물 종류가 우선합니다.
+  if (!post && selectedKind !== "all" && Object.hasOwn(postTypes, selectedKind)) {
+    const propertyTypeField = postForm.elements.namedItem("propertyType");
+    if (propertyTypeField) propertyTypeField.value = selectedKind;
+  }
   postFormStatus.textContent = "";
   legalAdStatus.textContent = "";
   currentBrokerTable = post ? normalizePropertyTable(post.brokerTable) : normalizePropertyTable(defaultBrokerTable);

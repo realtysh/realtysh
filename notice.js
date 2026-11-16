@@ -36,7 +36,7 @@
       await db.collection('siteContent').doc('homeNotice').set({lines:next,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
       status.textContent = '저장했습니다.';
       dialog.close();
-    } catch (error) { console.error('공지 저장 실패', error); status.textContent = '저장하지 못했습니다. 관리자 권한과 Firestore 규칙 배포를 확인해 주세요.'; }
+    } catch (error) { console.error('공지 저장 실패', error); status.textContent = error?.code === 'permission-denied' ? '저장 권한이 거부되었습니다. Firebase 콘솔에서 Firestore 규칙을 게시해야 합니다.' : '저장에 실패했습니다. 연결 상태와 관리자 권한을 확인해 주세요.'; }
     finally {save.disabled = false;}
   });
   // Firebase SDK and configuration are loaded by the main page. Do not initialize a second app.
