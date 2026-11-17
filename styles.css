@@ -1248,3 +1248,9 @@ button { color: inherit; }
 }
 .notice-motion-control {display:none;margin:9px auto 0;padding:7px 14px;background:transparent;color:#fff;border:1px solid #b6d9c8;border-radius:7px;cursor:pointer;font-size:14px;}
 @media (prefers-reduced-motion: reduce) { .notice-motion-control {display:block;} }
+
+/* v9: compact mobile ticker, readable reduced-motion default */
+@media(max-width:650px){.notice-ticker-copy{font-size:21px}.notice-ticker.is-playing .notice-ticker-copy{font-size:21px}}
+@media(prefers-reduced-motion:reduce){
+ .notice-ticker.is-playing .notice-ticker-track{animation:none !important;}
+}

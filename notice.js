@@ -22,10 +22,27 @@
   }
   const motionButton = document.querySelector('#notice-motion-control');
   const tickerBox = track.closest('.notice-ticker');
+  // Explicit opt-in: JS-driven scrolling remains usable when CSS animations are reduced.
+  let frame = 0, previous = 0, offset = 0;
+  const speed = 95; // pixels per second, approximately the original ticker pace
+  function animate(now) {
+    if (!tickerBox.classList.contains('is-playing')) return;
+    if (previous) offset += Math.min((now - previous) / 1000, 0.08) * speed;
+    previous = now;
+    const first = track.firstElementChild;
+    const step = first ? first.getBoundingClientRect().width : 0;
+    if (step > 0) offset %= step;
+    track.style.setProperty('transform', `translate3d(${-offset}px,0,0)`, 'important');
+    frame = requestAnimationFrame(animate);
+  }
   motionButton?.addEventListener('click', () => {
     const playing = tickerBox.classList.toggle('is-playing');
     motionButton.textContent = playing ? '움직임 멈추기' : '움직이는 글씨 보기';
     motionButton.setAttribute('aria-pressed', String(playing));
+    cancelAnimationFrame(frame);
+    previous = 0; offset = 0;
+    track.style.removeProperty('transform');
+    if (playing) frame = requestAnimationFrame(animate);
   });
   show(defaultText);
   editButton.addEventListener('click', () => {
