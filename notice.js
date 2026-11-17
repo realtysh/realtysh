@@ -20,6 +20,13 @@
       return span;
     }));
   }
+  const motionButton = document.querySelector('#notice-motion-control');
+  const tickerBox = track.closest('.notice-ticker');
+  motionButton?.addEventListener('click', () => {
+    const playing = tickerBox.classList.toggle('is-playing');
+    motionButton.textContent = playing ? '움직임 멈추기' : '움직이는 글씨 보기';
+    motionButton.setAttribute('aria-pressed', String(playing));
+  });
   show(defaultText);
   editButton.addEventListener('click', () => {
     if (editButton.hidden || !auth?.currentUser || auth.currentUser.isAnonymous) return;
