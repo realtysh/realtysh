@@ -16,13 +16,13 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Gowun+Batang:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css?v=20261117-notice5">
+    <link rel="stylesheet" href="styles.css?v=20261117-notice6">
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js" defer></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" defer></script>
     <script src="firebase-config.js?v=20261026-searchstats2" defer></script>
     <script src="script.js?v=4" defer></script>
-    <script src="notice.js?v=5" defer></script>
+    <script src="notice.js?v=6" defer></script>
     <link rel="alternate" type="application/rss+xml" title="현진부동산 최신 매물 RSS" href="https://realtysh.com/rss.xml">
   <script type="application/ld+json" id="website-jsonld">
   {
@@ -92,11 +92,8 @@
           </section>
           <section class="home-notice" aria-labelledby="home-notice-title">
             <div class="home-notice-head"><h2 id="home-notice-title">📢 현진부동산 알림</h2><button type="button" id="notice-edit" hidden>공지 수정</button></div>
-            <div class="home-notice-lines" id="notice-lines" aria-live="polite">
-              <p>시흥 롯데캐슬 시그니처 분양권 매매 전문 상담</p>
-              <p>급매·마이너스 프리미엄 매물 및 매수 희망 고객 접수 중</p>
-              <p>매도·매수 상담 010-3664-1861 | 채널톡 상담 가능</p>
-            </div>
+            <div class="notice-ticker" aria-label="추천매물 안내"><div class="notice-ticker-track" id="notice-ticker-track"><span class="notice-ticker-copy">오늘의 추천매물 202동 11층 마피 6,000만원 협의 가능</span><span class="notice-ticker-copy" aria-hidden="true">오늘의 추천매물 202동 11층 마피 6,000만원 협의 가능</span></div></div>
+            <p class="notice-phone"><a href="tel:01036641861">010-3664-1861</a></p>
             <p class="home-notice-status" id="notice-read-status" hidden></p>
           </section>
         </div>
@@ -361,10 +358,8 @@
     <dialog class="admin-dialog" id="notice-dialog" aria-labelledby="notice-dialog-title">
       <div class="post-dialog-head"><h2 id="notice-dialog-title">홈페이지 공지 수정</h2><button class="dialog-close" type="button" id="notice-close" aria-label="닫기">×</button></div>
       <form id="notice-form" class="notice-form">
-        <p>홈페이지에 표시할 공지 3줄을 입력하세요. 각 줄 최대 120자입니다.</p>
-        <label class="post-field"><span>첫째 줄</span><input name="line1" maxlength="120" required></label>
-        <label class="post-field"><span>둘째 줄</span><input name="line2" maxlength="120" required></label>
-        <label class="post-field"><span>셋째 줄</span><input name="line3" maxlength="120" required></label>
+        <p>빨간색으로 흐르는 추천매물 문구를 입력하세요. 최대 200자입니다.</p>
+        <label class="post-field"><span>움직이는 광고 문구</span><textarea name="ticker" maxlength="200" rows="3" required></textarea></label>
         <p id="notice-save-status" role="status"></p>
         <div class="post-form-actions"><button type="button" class="form-cancel" id="notice-cancel">취소</button><button type="submit" class="form-submit" id="notice-save">저장하기</button></div>
       </form>

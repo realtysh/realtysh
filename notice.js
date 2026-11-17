@@ -1,25 +1,29 @@
-// Homepage notice: Firestore persistence and administrator-only editing.
+// v6 homepage ticker: editable by verified administrators, readable by everyone.
 (() => {
-  const defaults = ["시흥 롯데캐슬 시그니처 분양권 매매 전문 상담", "급매·마이너스 프리미엄 매물 및 매수 희망 고객 접수 중", "매도·매수 상담 010-3664-1861 | 채널톡 상담 가능"];
-  const linesEl = document.querySelector('#notice-lines');
+  const defaultText = '오늘의 추천매물 202동 11층 마피 6,000만원 협의 가능';
+  const track = document.querySelector('#notice-ticker-track');
   const editButton = document.querySelector('#notice-edit');
   const dialog = document.querySelector('#notice-dialog');
   const form = document.querySelector('#notice-form');
   const status = document.querySelector('#notice-save-status');
   const readStatus = document.querySelector('#notice-read-status');
-  if (!linesEl || !editButton || !dialog || !form) return;
-  let lines = defaults.slice();
-  let db, auth, unsubscribe;
-  // Keep editing unavailable until administrator identity is verified.
+  if (!track || !editButton || !dialog || !form) return;
+  let ticker = defaultText, db, auth;
   editButton.hidden = true;
-  const show = (items) => {
-    lines = items;
-    linesEl.replaceChildren(...items.map(value => { const p = document.createElement('p'); p.textContent = value; return p; }));
-  };
-  show(defaults);
+  function show(value) {
+    ticker = value;
+    track.replaceChildren(...[0,1].map(i => {
+      const span = document.createElement('span');
+      span.className = 'notice-ticker-copy';
+      span.textContent = value;
+      if (i) span.setAttribute('aria-hidden','true');
+      return span;
+    }));
+  }
+  show(defaultText);
   editButton.addEventListener('click', () => {
     if (editButton.hidden || !auth?.currentUser || auth.currentUser.isAnonymous) return;
-    ['line1','line2','line3'].forEach((key,i) => {form.elements.namedItem(key).value = lines[i];});
+    form.elements.namedItem('ticker').value = ticker;
     status.textContent = '';
     dialog.showModal();
   });
@@ -28,31 +32,32 @@
   form.addEventListener('submit', async event => {
     event.preventDefault();
     if (!db || !auth?.currentUser || editButton.hidden) return;
-    const next = ['line1','line2','line3'].map(key => form.elements.namedItem(key).value.trim());
-    if (next.some(value => !value || value.length > 120)) {status.textContent = '세 줄 모두 120자 이내로 입력하세요.'; return;}
+    const next = form.elements.namedItem('ticker').value.trim().replace(/\s+/g,' ');
+    if (!next || next.length > 200) {status.textContent = '문구를 1~200자로 입력하세요.'; return;}
     const save = document.querySelector('#notice-save');
     save.disabled = true; status.textContent = '저장 중입니다.';
     try {
       const admin = await db.collection('admins').doc(auth.currentUser.uid).get();
       if (!admin.exists) throw new Error('관리자 권한이 없습니다.');
-      await db.collection('siteContent').doc('homeNotice').set({lines:next,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+      await db.collection('siteContent').doc('homeNotice').set({ticker:next,updatedAt:firebase.firestore.FieldValue.serverTimestamp()}, {merge:true});
+      show(next);
       status.textContent = '저장했습니다.';
       dialog.close();
-    } catch (error) { console.error('공지 저장 실패', error); status.textContent = error?.code === 'permission-denied' ? '저장 권한이 거부되었습니다. Firebase 콘솔에서 Firestore 규칙을 게시해야 합니다.' : '저장에 실패했습니다. 연결 상태와 관리자 권한을 확인해 주세요.'; }
-    finally {save.disabled = false;}
+    } catch (error) {
+      console.error('공지 저장 실패',error);
+      status.textContent = error?.code === 'permission-denied' ? '저장 권한이 거부되었습니다. Firestore 규칙을 확인하세요.' : '저장에 실패했습니다. 연결 상태와 관리자 권한을 확인하세요.';
+    } finally {save.disabled = false;}
   });
-  // Firebase SDK and configuration are loaded by the main page. Do not initialize a second app.
   const start = () => {
     if (typeof firebase === 'undefined' || !window.REALTYSH_FIREBASE_CONFIG) return false;
     if (!firebase.apps.length) firebase.initializeApp(window.REALTYSH_FIREBASE_CONFIG);
     db = firebase.firestore(); auth = firebase.auth();
-    unsubscribe = db.collection('siteContent').doc('homeNotice').onSnapshot(snap => {
-      const data = snap.data();
-      if (Array.isArray(data?.lines) && data.lines.length === 3 && data.lines.every(x => typeof x === 'string')) show(data.lines);
-      else show(defaults);
+    db.collection('siteContent').doc('homeNotice').onSnapshot(snap => {
+      const value = snap.data()?.ticker;
+      show(typeof value === 'string' && value.trim() ? value : defaultText);
       readStatus.hidden = true;
     }, error => {
-      console.warn('공지 불러오기 실패', error);
+      console.warn('공지 불러오기 실패',error);
       readStatus.textContent = '공지를 불러오지 못해 기본 안내를 표시합니다.';
       readStatus.hidden = false;
     });
@@ -62,9 +67,9 @@
       try {
         const admin = await db.collection('admins').doc(user.uid).get();
         if (auth.currentUser?.uid === user.uid && admin.exists) editButton.hidden = false;
-      } catch (error) {console.warn('공지 관리자 권한 확인 실패',error);}
+      } catch(error) { console.warn('공지 관리자 권한 확인 실패',error); }
     });
     return true;
   };
-  if (!start()) window.addEventListener('load', start, {once:true});
+  if (!start()) window.addEventListener('load',start,{once:true});
 })();

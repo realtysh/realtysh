@@ -11,13 +11,11 @@ service cloud.firestore {
     match /siteContent/homeNotice {
       allow read: if true;
       allow create, update: if isAdmin()
-        && request.resource.data.keys().hasOnly(['lines', 'updatedAt'])
-        && request.resource.data.keys().hasAll(['lines', 'updatedAt'])
-        && request.resource.data.lines is list
-        && request.resource.data.lines.size() == 3
-        && request.resource.data.lines[0] is string && request.resource.data.lines[0].size() > 0 && request.resource.data.lines[0].size() <= 120
-        && request.resource.data.lines[1] is string && request.resource.data.lines[1].size() > 0 && request.resource.data.lines[1].size() <= 120
-        && request.resource.data.lines[2] is string && request.resource.data.lines[2].size() > 0 && request.resource.data.lines[2].size() <= 120
+        && request.resource.data.keys().hasOnly(['lines', 'ticker', 'updatedAt'])
+        && request.resource.data.keys().hasAll(['ticker', 'updatedAt'])
+        && request.resource.data.ticker is string
+        && request.resource.data.ticker.size() > 0
+        && request.resource.data.ticker.size() <= 200
         && request.resource.data.updatedAt == request.time;
       allow delete: if false;
     }
