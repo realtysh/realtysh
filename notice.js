@@ -19,6 +19,7 @@
       if (i) span.setAttribute('aria-hidden','true');
       return span;
     }));
+    offset = 0; previous = 0;
   }
   const motionButton = document.querySelector('#notice-motion-control');
   const tickerBox = track.closest('.notice-ticker');

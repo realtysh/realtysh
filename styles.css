@@ -1254,3 +1254,10 @@ button { color: inherit; }
 @media(prefers-reduced-motion:reduce){
  .notice-ticker.is-playing .notice-ticker-track{animation:none !important;}
 }
+
+/* v10: consistent ticker on mobile, including explicit reduced-motion opt-in */
+@media(max-width:650px){.notice-ticker-copy,.notice-ticker.is-playing .notice-ticker-copy{font-size:19px}}
+@media(prefers-reduced-motion:reduce){
+ .notice-ticker.is-playing .notice-ticker-track{display:flex;width:max-content;animation:none !important;will-change:transform}
+ .notice-ticker.is-playing .notice-ticker-copy[aria-hidden="true"]{display:block}
+}
