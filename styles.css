@@ -1215,49 +1215,20 @@ button { color: inherit; }
 @media(max-width:650px){.home-notice{padding:18px 14px;margin-top:22px}.home-notice-head{justify-content:flex-start;padding-right:76px}.home-notice-head h2{font-size:16px}.home-notice-lines p{font-size:clamp(18px,5vw,23px)}.home-notice-lines p:nth-child(2){font-size:clamp(21px,5.8vw,28px)}.home-notice-lines p:nth-child(3){font-size:clamp(15px,4.2vw,20px)}}
 @media(prefers-reduced-motion:reduce){.home-notice-lines p:nth-child(2){animation:none}}
 
-/* v6 continuous editable announcement ticker */
+/* v11: single JS-controlled ticker; explicit play control works with reduced motion. */
 .home-notice{background:#064531;border-color:#31866a;padding:18px 22px;width:min(900px,calc(100% - 24px));}
-.home-notice-head{margin-bottom:14px;}
-.home-notice-head h2{color:#ffe29b;}
-.notice-ticker{overflow:hidden;background:#fff6ee;border-radius:7px;padding:13px 0;width:100%;}
-.notice-ticker-track{display:flex;width:max-content;animation:notice-flow-v6 12.31s linear infinite;will-change:transform;}
-.notice-ticker-copy{flex:none;white-space:nowrap;color:#d82030;font-size:clamp(23px,3.4vw,33px);font-weight:900;line-height:1.5;padding-right:5em;}
-@keyframes notice-flow-v6{to{transform:translateX(-50%);}}
-.notice-phone{margin:15px 0 0;text-align:center;line-height:1.3;}
-.notice-phone a{color:#fff;text-decoration:none;font-weight:900;font-size:clamp(27px,5vw,39px);letter-spacing:.02em;}
-@media(max-width:650px){.home-notice{padding:16px 12px}.notice-ticker-copy{font-size:25px}.notice-phone a{font-size:clamp(26px,7vw,34px)}}
-/* v7: Keep the announcement ticker moving even when the OS requests reduced motion. */
-@media (prefers-reduced-motion: reduce) {
-  .notice-ticker-track {
-    animation-name: notice-flow-v6 !important;
-    animation-duration: 12.31s !important;
-    animation-timing-function: linear !important;
-    animation-iteration-count: infinite !important;
-  }
-}
-
-/* v8: readable complete notice when reduced motion is requested */
-@media (prefers-reduced-motion: reduce) {
-  .notice-ticker { overflow:visible; padding:12px 14px; }
-  .notice-ticker-track { display:block; width:100%; animation:none !important; transform:none !important; will-change:auto; }
-  .notice-ticker-copy { display:block; white-space:normal; overflow-wrap:anywhere; word-break:keep-all; padding-right:0; text-align:center; font-size:clamp(20px,5.5vw,30px); }
-  .notice-ticker-copy[aria-hidden="true"] { display:none; }
-  .notice-ticker.is-playing { overflow:hidden; padding:13px 0; }
-  .notice-ticker.is-playing .notice-ticker-track { display:flex; width:max-content; animation:notice-flow-v6 12.31s linear infinite !important; will-change:transform; }
-  .notice-ticker.is-playing .notice-ticker-copy { display:block; white-space:nowrap; padding-right:5em; font-size:clamp(23px,3.4vw,33px); }
-}
-.notice-motion-control {display:none;margin:9px auto 0;padding:7px 14px;background:transparent;color:#fff;border:1px solid #b6d9c8;border-radius:7px;cursor:pointer;font-size:14px;}
-@media (prefers-reduced-motion: reduce) { .notice-motion-control {display:block;} }
-
-/* v9: compact mobile ticker, readable reduced-motion default */
-@media(max-width:650px){.notice-ticker-copy{font-size:21px}.notice-ticker.is-playing .notice-ticker-copy{font-size:21px}}
+.home-notice-head{margin-bottom:14px}.home-notice-head h2{color:#ffe29b}
+.notice-ticker{overflow:hidden;background:#fff6ee;border-radius:7px;padding:13px 0;width:100%}
+.notice-ticker-track{display:flex;width:max-content;transform:translate3d(0,0,0);will-change:transform}
+.notice-ticker-copy{flex:none;white-space:nowrap;color:#d82030;font-size:clamp(23px,3.4vw,33px);font-weight:900;line-height:1.5;padding-right:5em}
+.notice-phone{margin:15px 0 0;text-align:center;line-height:1.3}
+.notice-phone a{color:#fff;text-decoration:none;font-weight:900;font-size:clamp(27px,5vw,39px);letter-spacing:.02em}
+.notice-motion-control{display:block;margin:10px auto 0;padding:9px 17px;background:#fff;color:#064531;border:2px solid #c9e5d5;border-radius:8px;cursor:pointer;font-size:15px;font-weight:800;opacity:1}
+.notice-motion-control:focus-visible{outline:3px solid #ffd166;outline-offset:3px}
+@media(max-width:650px){.home-notice{padding:16px 12px}.notice-ticker-copy{font-size:19px}.notice-phone a{font-size:clamp(26px,7vw,34px)}}
 @media(prefers-reduced-motion:reduce){
- .notice-ticker.is-playing .notice-ticker-track{animation:none !important;}
-}
-
-/* v10: consistent ticker on mobile, including explicit reduced-motion opt-in */
-@media(max-width:650px){.notice-ticker-copy,.notice-ticker.is-playing .notice-ticker-copy{font-size:19px}}
-@media(prefers-reduced-motion:reduce){
- .notice-ticker.is-playing .notice-ticker-track{display:flex;width:max-content;animation:none !important;will-change:transform}
- .notice-ticker.is-playing .notice-ticker-copy[aria-hidden="true"]{display:block}
+ .notice-ticker:not(.is-playing){overflow:visible;padding:12px 14px}
+ .notice-ticker:not(.is-playing) .notice-ticker-track{display:block;width:100%;transform:none!important;will-change:auto}
+ .notice-ticker:not(.is-playing) .notice-ticker-copy{display:block;white-space:normal;overflow-wrap:anywhere;word-break:keep-all;padding-right:0;text-align:center}
+ .notice-ticker:not(.is-playing) .notice-ticker-copy[aria-hidden="true"]{display:none}
 }

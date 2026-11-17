@@ -20,6 +20,7 @@
       return span;
     }));
     offset = 0; previous = 0;
+    track.style.transform = 'translate3d(0,0,0)';
   }
   const motionButton = document.querySelector('#notice-motion-control');
   const tickerBox = track.closest('.notice-ticker');
@@ -33,7 +34,7 @@
     const first = track.firstElementChild;
     const step = first ? first.getBoundingClientRect().width : 0;
     if (step > 0) offset %= step;
-    track.style.setProperty('transform', `translate3d(${-offset}px,0,0)`, 'important');
+    track.style.transform = `translate3d(${-offset}px,0,0)`;
     frame = requestAnimationFrame(animate);
   }
   motionButton?.addEventListener('click', () => {
@@ -42,10 +43,17 @@
     motionButton.setAttribute('aria-pressed', String(playing));
     cancelAnimationFrame(frame);
     previous = 0; offset = 0;
-    track.style.removeProperty('transform');
+    track.style.transform = 'translate3d(0,0,0)';
     if (playing) frame = requestAnimationFrame(animate);
   });
   show(defaultText);
+  // Follow accessibility preferences initially; allow visitors to opt in explicitly.
+  if (!window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    tickerBox.classList.add('is-playing');
+    motionButton.textContent = '움직임 멈추기';
+    motionButton.setAttribute('aria-pressed', 'true');
+    frame = requestAnimationFrame(animate);
+  }
   editButton.addEventListener('click', () => {
     if (editButton.hidden || !auth?.currentUser || auth.currentUser.isAnonymous) return;
     form.elements.namedItem('ticker').value = ticker;
