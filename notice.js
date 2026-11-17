@@ -10,13 +10,15 @@
   if (!linesEl || !editButton || !dialog || !form) return;
   let lines = defaults.slice();
   let db, auth, unsubscribe;
+  // Keep editing unavailable until administrator identity is verified.
+  editButton.hidden = true;
   const show = (items) => {
     lines = items;
     linesEl.replaceChildren(...items.map(value => { const p = document.createElement('p'); p.textContent = value; return p; }));
   };
   show(defaults);
   editButton.addEventListener('click', () => {
-    if (editButton.hidden) return;
+    if (editButton.hidden || !auth?.currentUser || auth.currentUser.isAnonymous) return;
     ['line1','line2','line3'].forEach((key,i) => {form.elements.namedItem(key).value = lines[i];});
     status.textContent = '';
     dialog.showModal();
