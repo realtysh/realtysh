@@ -329,9 +329,22 @@
       <div class="post-dialog-head"><div><p class="eyebrow">HYUNJIN LOCAL NEWS</p><h2 id="neighborhood-title">우리동네 소식</h2></div><button class="dialog-close" id="close-neighborhood" type="button" aria-label="닫기">×</button></div>
       <div class="neighborhood-toolbar"><p>시흥 신천동과 인근 지역의 소식을 전합니다.</p><button class="post-create-inline admin-only" id="news-create" type="button" hidden>+ 소식 작성</button></div>
       <form id="news-form" class="news-form" hidden>
+        <input type="hidden" id="news-edit-id">
         <label class="post-field"><span>제목</span><input name="title" required maxlength="100" placeholder="소식 제목"></label>
-        <label class="post-field"><span>내용</span><textarea name="content" required maxlength="10000" rows="7" placeholder="우리동네 소식을 작성해 주세요."></textarea></label>
-        <div class="post-form-actions"><button class="form-cancel" id="cancel-news" type="button">취소</button><button class="form-submit" type="submit">등록</button></div><p class="post-form-status" id="news-status"></p>
+        <div class="news-editor-toolbar" aria-label="글 편집 도구">
+          <button type="button" data-news-cmd="bold" title="굵게"><b>굵게</b></button>
+          <button type="button" data-news-cmd="underline" title="밑줄"><u>밑줄</u></button>
+          <button type="button" data-news-cmd="insertUnorderedList">목록</button>
+          <button type="button" data-news-cmd="justifyCenter">가운데 정렬</button>
+          <label>글자 크기 <select id="news-font-size"><option value="3">보통</option><option value="4">크게</option><option value="5">더 크게</option></select></label>
+          <label>글자 색 <input type="color" id="news-font-color" value="#263b31"></label>
+          <button type="button" id="news-insert-link">링크</button>
+          <button type="button" id="news-insert-image">사진 넣기</button>
+          <input type="file" id="news-image-file" accept="image/*" hidden>
+        </div>
+        <div id="news-rich-editor" class="news-rich-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="우리동네 소식을 작성해 주세요."></div>
+        <p class="news-editor-hint">사진은 자동으로 크기를 줄여 글에 저장합니다. 한 글에 사진이 많으면 저장 용량 제한이 생길 수 있습니다.</p>
+        <div class="post-form-actions"><button class="form-cancel" id="cancel-news" type="button">취소</button><button class="form-submit" id="news-save-button" type="submit">등록</button></div><p class="post-form-status" id="news-status"></p>
       </form>
       <div class="news-list" id="news-list"><p>소식을 불러오는 중입니다.</p></div>
     </dialog>
