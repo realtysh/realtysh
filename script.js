@@ -1312,7 +1312,6 @@ async function connectFirebase() {
   }
 }
 
-connectFirebase();
 // Customer listing intake: customer-owned records + admin management
 const inquiryDialog = document.querySelector("#inquiry-dialog");
 const inquiryForm = document.querySelector("#inquiry-form");
@@ -1486,7 +1485,6 @@ function renderMyInquiry(doc) {
 }
 
 
-connectFirebase();
 
 
 // Neighborhood news: list -> detail -> admin editor. Legacy plain text remains supported.
@@ -1588,3 +1586,6 @@ newsForm?.addEventListener('submit',async e=>{e.preventDefault();if(!database||!
  newsSaveButton.disabled=true;newsStatus.textContent='저장 중입니다.';
  try{const now=firebase.firestore.FieldValue.serverTimestamp();if(newsEditId.value){await newsCollection().doc(newsEditId.value).update({title,content,html,updatedAt:now})}else{await newsCollection().add({title,content,html,createdAt:now,updatedAt:now})}resetNewsEditor();newsStatus.textContent='';}catch(err){console.error(err);newsStatus.textContent='저장하지 못했습니다. 관리자 권한과 저장 용량을 확인해 주세요.'}finally{newsSaveButton.disabled=false}
 });
+
+// Initialize Firebase after all bindings have been declared.
+connectFirebase();
