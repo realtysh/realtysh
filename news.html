@@ -1,0 +1,23 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>우리동네 소식 | 현진부동산</title><meta name="description" content="시흥 신천동과 인근 지역의 부동산 및 지역 소식"><link rel="stylesheet" href="styles.css?v=15"><link rel="stylesheet" href="news.css?v=15"><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js" defer></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js" defer></script><script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js" defer></script><script src="firebase-config.js?v=20261026-searchstats2" defer></script><script src="news.js?v=15" defer></script></head><body class="news-page-body">    <main class="news-page neighborhood-dialog" id="neighborhood-dialog" aria-labelledby="neighborhood-title">
+      <div class="post-dialog-head"><div><p class="eyebrow">HYUNJIN LOCAL NEWS</p><h2 id="neighborhood-title">우리동네 소식</h2></div><a class="news-home-link" href="index.html">← 홈페이지</a></div>
+      <div class="neighborhood-toolbar"><p>시흥 신천동과 인근 지역의 소식을 전합니다.</p><button class="post-create-inline admin-only" id="news-create" type="button" hidden>+ 소식 작성</button></div>
+      <form id="news-form" class="news-form" hidden>
+        <input type="hidden" id="news-edit-id">
+        <label class="post-field"><span>제목</span><input name="title" required maxlength="100" placeholder="소식 제목"></label>
+        <div class="news-editor-toolbar" aria-label="글 편집 도구">
+          <button type="button" data-news-cmd="bold" title="굵게"><b>굵게</b></button>
+          <button type="button" data-news-cmd="underline" title="밑줄"><u>밑줄</u></button>
+          <button type="button" data-news-cmd="insertUnorderedList">목록</button>
+          <button type="button" data-news-cmd="justifyCenter">가운데 정렬</button>
+          <label>글자 크기 <select id="news-font-size"><option value="3">보통</option><option value="4">크게</option><option value="5">더 크게</option></select></label>
+          <label>글자 색 <input type="color" id="news-font-color" value="#263b31"></label>
+          <button type="button" id="news-insert-link">링크</button>
+          <button type="button" id="news-insert-image">사진 넣기</button>
+          <input type="file" id="news-image-file" accept="image/*" hidden>
+        </div>
+        <div id="news-rich-editor" class="news-rich-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="우리동네 소식을 작성해 주세요."></div>
+        <p class="news-editor-hint">사진은 자동으로 크기를 줄여 글에 저장합니다. 한 글에 사진이 많으면 저장 용량 제한이 생길 수 있습니다.</p>
+        <div class="post-form-actions"><button class="form-cancel" id="cancel-news" type="button">취소</button><button class="form-submit" id="news-save-button" type="submit">등록</button></div><p class="post-form-status" id="news-status"></p>
+      </form>
+      <div class="news-list" id="news-list"><p>소식을 불러오는 중입니다.</p></div>
+    </main><footer class="news-footer"><a href="index.html">현진부동산 홈페이지로 돌아가기</a></footer></body></html>

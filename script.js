@@ -1547,7 +1547,7 @@ function safeNewsHtml(html){
 }
 function resetNewsEditor(){newsForm.reset();newsEditor.innerHTML='';newsEditId.value='';newsSaveButton.textContent='등록';newsStatus.textContent='';newsForm.hidden=true}
 function showNewsEditor(item){newsForm.hidden=false;newsEditId.value=item?.id||'';newsForm.elements.title.value=item?.title||'';newsEditor.innerHTML=item?.html? safeNewsHtml(item.html):'';if(item&&!item.html)newsEditor.textContent=item.content||'';newsSaveButton.textContent=item?'수정 저장':'등록';newsStatus.textContent='';newsForm.scrollIntoView({block:'nearest'});newsForm.elements.title.focus()}
-openNeighborhoodButton?.addEventListener('click',()=>{selectedNewsId=null;resetNewsEditor();renderNeighborhoodNews();neighborhoodDialog?.showModal()});
+openNeighborhoodButton?.addEventListener('click',()=>{window.location.href='news.html'});
 closeNeighborhoodButton?.addEventListener('click',()=>neighborhoodDialog?.close());
 newsCreateButton?.addEventListener('click',()=>showNewsEditor(null));
 cancelNewsButton?.addEventListener('click',()=>resetNewsEditor());
