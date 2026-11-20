@@ -1307,5 +1307,5 @@ button { color: inherit; }
 }
 
 /* 첫 번째 고정 추천매물만 강조: 기존 카드/버튼 구성 유지 */
-.featured-card-pinned { border: 3px solid #d6a33c; position: relative; box-shadow: 0 14px 32px rgb(0 0 0 / 23%), 0 0 0 2px rgb(255 215 100 / 30%); }
-.featured-pinned-label { background: #f6df9a; color: #533800; font-weight: 800; font-size: 14px; padding: 9px 12px; text-align: center; }
+.featured-card-pinned { border: 9px solid #1766cf; box-sizing: border-box; position: relative; box-shadow: 0 14px 32px rgb(0 0 0 / 23%), 0 0 0 2px rgb(23 102 207 / 20%); }
+.featured-pinned-label { background: #f6df9a; color: #533800; font-weight: 800; font-size: 21px; line-height: 1.3; padding: 9px 8px; text-align: center; overflow-wrap: anywhere; }
