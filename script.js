@@ -212,7 +212,7 @@ function showHome() {
 
 function renderFeaturedPosts() {
   if (!featuredGrid) return;
-  const featured = posts.filter((post) => post.featured).slice(0, 12);
+  const featured = posts.filter((post) => post.featured).sort((a, b) => Number(Boolean(b.featuredPinned)) - Number(Boolean(a.featuredPinned))).slice(0, 12);
 
   if (!featured.length) {
     featuredGrid.innerHTML = '<p class="featured-empty">관리자가 추천매물을 선택하면 여기에 표시됩니다.</p>';
@@ -233,6 +233,11 @@ function renderFeaturedPosts() {
   featuredGrid.replaceChildren(...featured.map((post) => {
     const card = document.createElement("article");
     card.className = "featured-card";
+    if (post.featuredPinned) {
+      card.classList.add("featured-card-pinned");
+      const ribbon = createTextElement("div", "featured-pinned-label", "⭐ 현진부동산 강력추천");
+      card.append(ribbon);
+    }
 
     const link = document.createElement("a");
     link.className = "featured-card-link";
@@ -691,7 +696,7 @@ function openPostForm(post = null) {
     Object.entries(post).forEach(([key, value]) => {
       const field = postForm.elements.namedItem(key);
       if (field && typeof value === "string") field.value = value;
-      if (key === "featured" && field) field.checked = Boolean(value);
+      if ((key === "featured" || key === "featuredPinned") && field) field.checked = Boolean(value);
     });
     fillLegalFieldsFromTable(post.propertyTable);
     setLegalFieldVisibility();
@@ -1183,6 +1188,7 @@ postForm.addEventListener("submit", async (event) => {
     }
   }
   const wantsFeatured = formData.get("featured") === "on";
+  const wantsPinned = wantsFeatured && formData.get("featuredPinned") === "on";
   if (wantsFeatured) {
     const otherFeaturedCount = posts.filter((post) => post.featured && post.id !== editingPostId).length;
     if (otherFeaturedCount >= 12) {
@@ -1202,7 +1208,8 @@ postForm.addEventListener("submit", async (event) => {
     photoUrls: currentPhotoUrls,
     propertyTable: serializePropertyTable(buildLegalRows(formData)),
     brokerTable: serializePropertyTable(normalizePropertyTable(currentBrokerTable)),
-    featured: wantsFeatured
+    featured: wantsFeatured,
+    featuredPinned: wantsPinned
   };
   postData.photoUrls = postData.photoUrls.filter((url) => !removedPhotos.has(url));
 
@@ -1227,7 +1234,19 @@ postForm.addEventListener("submit", async (event) => {
     postData.representativePhotoUrl = representativePhotoUrl;
     postData.imageUrl = representativePhotoUrl || (currentPhotoUrls.length ? "" : currentPost?.imageUrl || "");
     const timestamp = firebase.firestore.FieldValue.serverTimestamp();
-    if (editingPostId) {
+    if (wantsPinned) {
+      const batch = database.batch();
+      posts.filter((item) => item.featuredPinned && item.id !== postReference.id).forEach((item) => {
+        batch.update(database.collection("posts").doc(item.id), { featuredPinned: false });
+      });
+      if (editingPostId) {
+        batch.update(postReference, { ...postData, updatedAt: timestamp });
+      } else {
+        batch.set(postReference, { ...postData, createdAt: timestamp, updatedAt: timestamp });
+      }
+      await batch.commit();
+      setFirebaseStatus(editingPostId ? "게시글을 수정했습니다." : "게시글을 등록했습니다.", "connected");
+    } else if (editingPostId) {
       await postReference.update({
         ...postData,
         updatedAt: timestamp
