@@ -323,11 +323,12 @@ function renderFeaturedPosts() {
     card.append(link);
     const actions = document.createElement("div");
     actions.className = "hyunjin-card-actions";
-    const call = document.createElement("a");
+    const call = document.createElement("button");
+    call.type = "button";
     call.className = "hyunjin-card-call";
-    call.href = "tel:01036641861";
-    call.textContent = "☎ 전화 상담하기";
-    call.setAttribute("aria-label", `${post.title || "매물"} 전화 상담 010-3664-1861`);
+    call.textContent = "💬 매수 상담하기 · 채팅 상담";
+    call.setAttribute("aria-label", `${post.title || "매물"} 채널톡 매수 상담`);
+    call.addEventListener("click", openBuyerChat);
     const detail = document.createElement("a");
     detail.className = "hyunjin-card-detail";
     detail.href = link.href;
@@ -1363,13 +1364,13 @@ function openInquiryForm() {
 document.querySelector("#open-inquiry")?.addEventListener("click", openInquiryForm);
 document.querySelector("#hero-open-inquiry")?.addEventListener("click", openInquiryForm);
 // 매수 상담은 다른 페이지로 이동하지 않고 채널톡 메신저를 엽니다.
-document.querySelector("#hero-open-buyer-chat")?.addEventListener("click", () => {
+function openBuyerChat() {
   if (typeof window.ChannelIO === "function") {
     window.ChannelIO("showMessenger");
   } else {
     window.alert("채팅 상담을 불러오지 못했습니다. 잠시 후 다시 시도하시거나 010-3664-1861로 전화해 주세요.");
   }
-});
+}
 document.querySelector('a[href="#inquiry"]')?.addEventListener("click", (event) => {
   event.preventDefault(); mainNav.classList.remove("is-open"); menuToggle.setAttribute("aria-expanded", "false"); openInquiryForm();
 });
